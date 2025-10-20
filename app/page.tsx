@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Card from "@/app/components/Card";
+import Container from "@/app/components/Container";
+import PageSkeleton from "@/app/components/PageSkeleton";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -37,20 +40,16 @@ export default function Home() {
   }, [router, supabase.auth]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
-        <div className="text-lg text-white">Loading...</div>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-[#0a0a0a]">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-5xl font-bold mb-4 text-white">
+    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
+      <Container>
+        <h1 className="text-5xl font-bold mb-4">
           Welcome to Transparenztool
         </h1>
-        <p className="text-xl text-gray-300 mb-8">
+        <p className="text-xl text-muted-foreground mb-8">
           Your platform for supply chain transparency
         </p>
 
@@ -61,23 +60,24 @@ export default function Home() {
             by selecting your occupation.
           </p>
           <div className="flex gap-4">
-            <button
+            <Button
+              onClick={() => router.push("/register")}
+              size="lg"
+            >
+              Get Started
+            </Button>
+            <Button
               onClick={() => router.push("/login")}
-              className="rounded-full bg-black text-white font-medium py-3 px-6 hover:bg-gray-800 transition-colors"
+              variant="outline"
+              size="lg"
             >
               Login
-            </button>
-            <button
-              onClick={() => router.push("/register")}
-              className="rounded-full border border-gray-300 text-black font-medium py-3 px-6 hover:bg-gray-100 transition-colors"
-            >
-              Register
-            </button>
+            </Button>
           </div>
         </Card>
 
         <div className="grid gap-6 md:grid-cols-3">
-          <Card title="For Farmers 🌾">
+          <Card title="For Farmers ">
             <p className="text-gray-700">
               Manage crops, track shipments, and maintain quality standards with 
               complete transparency.
@@ -98,7 +98,7 @@ export default function Home() {
             </p>
           </Card>
         </div>
-      </div>
+      </Container>
     </div>
   );
 }

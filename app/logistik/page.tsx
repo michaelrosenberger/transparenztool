@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Card from "@/app/components/Card";
+import Container from "@/app/components/Container";
+import PageSkeleton from "@/app/components/PageSkeleton";
+import { Button } from "@/components/ui/button";
 
 interface StorageSummary {
   vegetable: string;
@@ -90,22 +93,18 @@ export default function LogistikPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
-        <div className="text-lg text-white">Loading...</div>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   const fullName = user?.user_metadata?.full_name || "Logistics Partner";
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-[#0a0a0a]">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-5xl font-bold mb-4 text-white">
+    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
+      <Container>
+        <h1 className="text-5xl font-bold mb-4">
           Welcome, {fullName}! 🚚
         </h1>
-        <p className="text-xl text-gray-300 mb-8">
+        <p className="text-xl text-muted-foreground mb-8">
           Your Logistics Dashboard
         </p>
 
@@ -154,12 +153,12 @@ export default function LogistikPage() {
               Review and accept orders that have been delivered by farmers. 
               Verify order details and accept them for logistics processing.
             </p>
-            <button
+            <Button
               onClick={() => router.push("/logistik/orders/delivered")}
-              className="w-full rounded-full bg-black text-white font-medium py-2 px-4 hover:bg-gray-800 transition-colors"
+              className="w-full"
             >
               View Delivered Orders
-            </button>
+            </Button>
           </Card>
 
           <Card title="Accepted Orders">
@@ -167,16 +166,16 @@ export default function LogistikPage() {
               View all orders that have been accepted for logistics processing. 
               These orders are read-only and cannot be modified.
             </p>
-            <button
+            <Button
               onClick={() => router.push("/logistik/orders/accepted")}
-              className="w-full rounded-full bg-black text-white font-medium py-2 px-4 hover:bg-gray-800 transition-colors"
+              className="w-full"
             >
               View Accepted Orders
-            </button>
+            </Button>
           </Card>
         </div>
 
-      </div>
+      </Container>
     </div>
   );
 }

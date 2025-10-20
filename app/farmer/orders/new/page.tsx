@@ -4,6 +4,27 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Card from "@/app/components/Card";
+import Container from "@/app/components/Container";
+import PageSkeleton from "@/app/components/PageSkeleton";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 type Vegetable = "Tomatoes" | "Carrots" | "Potatoes" | "Salad";
 
@@ -131,37 +152,38 @@ export default function NewOrderPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
-        <div className="text-lg text-white">Loading...</div>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-[#0a0a0a]">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
+      <Container>
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-4xl font-bold text-white">Create New Order</h1>
-          <button
+          <h1 className="text-4xl font-bold">Create New Order</h1>
+          <Button
             onClick={() => router.push("/farmer")}
-            className="text-gray-300 hover:text-white transition-colors"
+            variant="ghost"
+            className="text-muted-foreground hover:text-foreground"
           >
             ← Back to Dashboard
-          </button>
+          </Button>
         </div>
 
-        {message && (
-          <div
-            className={`mb-6 p-4 rounded-lg ${
-              message.type === "success"
-                ? "bg-green-100 border border-green-400 text-green-700"
-                : "bg-red-100 border border-red-400 text-red-700"
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
+        <AlertDialog open={!!message} onOpenChange={() => setMessage(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {message?.type === "success" ? "Success" : "Error"}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {message?.text}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogAction onClick={() => setMessage(null)}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <Card className="mb-6">
           <div className="mb-4">
@@ -177,49 +199,50 @@ export default function NewOrderPage() {
           <h2 className="text-2xl font-semibold mb-4 text-black">Add Vegetables</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium mb-2 text-black">
-                Vegetable Field
-              </label>
-              <select
+            <div className="space-y-2">
+              <Label>Vegetable Field</Label>
+              <Select
                 value={selectedVegetable}
-                onChange={(e) => setSelectedVegetable(e.target.value as Vegetable)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-black"
+                onValueChange={(value) => setSelectedVegetable(value as Vegetable)}
               >
-                {VEGETABLES.map((veg) => (
-                  <option key={veg} value={veg}>
-                    {veg}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {VEGETABLES.map((veg) => (
+                    <SelectItem key={veg} value={veg}>
+                      {veg}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2 text-black">
+            <div className="space-y-2">
+              <Label>
                 Quantity: <span className="font-bold">{quantity} kg</span>
-              </label>
-              <input
-                type="range"
-                min="1"
-                max="500"
-                step="5"
-                value={quantity}
-                onChange={(e) => setQuantity(parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+              </Label>
+              <Slider
+                value={[quantity]}
+                onValueChange={(value) => setQuantity(value[0])}
+                min={1}
+                max={500}
+                step={5}
+                className="w-full"
               />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <div className="flex justify-between text-xs text-muted-foreground">
                 <span>1 kg</span>
                 <span>500 kg</span>
               </div>
             </div>
 
             <div className="flex items-end">
-              <button
+              <Button
                 onClick={addItem}
-                className="w-full rounded-full bg-black text-white font-medium py-2 px-4 hover:bg-gray-800 transition-colors"
+                className="w-full"
               >
                 Add to Order
-              </button>
+              </Button>
             </div>
           </div>
         </Card>
@@ -251,12 +274,13 @@ export default function NewOrderPage() {
                       <span className="text-gray-600">kg</span>
                     </div>
                   </div>
-                  <button
+                  <Button
                     onClick={() => removeItem(index)}
-                    className="text-red-600 hover:text-red-800 font-medium"
+                    variant="destructive"
+                    size="sm"
                   >
                     Remove
-                  </button>
+                  </Button>
                 </div>
               ))}
               
@@ -277,21 +301,24 @@ export default function NewOrderPage() {
         </Card>
 
         <div className="flex gap-4">
-          <button
+          <Button
             onClick={() => router.push("/farmer")}
-            className="flex-1 rounded-full border border-gray-300 bg-white text-black font-medium py-3 px-6 hover:bg-gray-100 transition-colors"
+            variant="outline"
+            size="lg"
+            className="flex-1"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleSubmit}
-            disabled={submitting || items.length === 0}
-            className="flex-1 rounded-full bg-black text-white font-medium py-3 px-6 hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={items.length === 0 || submitting}
+            size="lg"
+            className="flex-1"
           >
-            {submitting ? "Submitting..." : "Submit Order"}
-          </button>
+            {submitting ? "Creating Order..." : "Create Order"}
+          </Button>
         </div>
-      </div>
+      </Container>
     </div>
   );
 }

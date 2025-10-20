@@ -4,7 +4,11 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Card from "@/app/components/Card";
+import Container from "@/app/components/Container";
+import PageSkeleton from "@/app/components/PageSkeleton";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface Order {
   id: string;
@@ -60,16 +64,18 @@ export default function OrdersListPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusVariant = (status: string) => {
     switch (status) {
       case "Announced":
-        return "bg-blue-100 text-blue-800 border-blue-200";
+        return "announced";
       case "Delivered":
-        return "bg-green-100 text-green-800 border-green-200";
+        return "delivered";
+      case "Accepted":
+        return "accepted";
       case "Stored":
-        return "bg-purple-100 text-purple-800 border-purple-200";
+        return "stored";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return "outline";
     }
   };
 
@@ -89,31 +95,27 @@ export default function OrdersListPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
-        <div className="text-lg text-white">Loading...</div>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-[#0a0a0a]">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
+      <Container>
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-4xl font-bold text-white">My Orders</h1>
+          <h1 className="text-4xl font-bold">My Orders</h1>
           <div className="flex gap-4">
-            <button
+            <Button
               onClick={() => router.push("/farmer")}
-              className="text-gray-300 hover:text-white transition-colors"
+              variant="ghost"
+              className="text-muted-foreground hover:text-foreground"
             >
               ← Back to Dashboard
-            </button>
-            <Link
-              href="/farmer/orders/new"
-              className="rounded-full bg-white text-black font-medium py-2 px-6 hover:bg-gray-200 transition-colors"
-            >
-              + New Order
-            </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/farmer/orders/new">
+                + New Order
+              </Link>
+            </Button>
           </div>
         </div>
 
@@ -121,69 +123,62 @@ export default function OrdersListPage() {
           <Card>
             <div className="text-center py-12">
               <p className="text-gray-600 mb-4">No orders yet</p>
-              <Link
-                href="/farmer/orders/new"
-                className="inline-block rounded-full bg-black text-white font-medium py-3 px-6 hover:bg-gray-800 transition-colors"
-              >
-                Create Your First Order
-              </Link>
+              <Button asChild size="lg">
+                <Link href="/farmer/orders/new">
+                  Create Your First Order
+                </Link>
+              </Button>
             </div>
           </Card>
         ) : (
           <div className="space-y-4">
             {orders.map((order) => (
               <Card key={order.id}>
-                <Link href={`/farmer/orders/${order.id}`}>
-                  <div className="cursor-pointer hover:bg-gray-50 transition-colors p-2 -m-2 rounded-md">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="text-xl font-semibold text-black mb-1">
-                          {order.order_number}
-                        </h3>
-                        <p className="text-sm text-gray-500">
-                          Created: {formatDate(order.created_at)}
-                        </p>
-                      </div>
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(
-                          order.status
-                        )}`}
-                      >
-                        {order.status}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                      <div>
-                        <p className="text-sm text-gray-600">Items</p>
-                        <p className="font-semibold text-black">{order.items.length}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Total Quantity</p>
-                        <p className="font-semibold text-black">
-                          {getTotalQuantity(order.items)} kg
-                        </p>
-                      </div>
-                      <div className="col-span-2">
-                        <p className="text-sm text-gray-600">Vegetables</p>
-                        <p className="font-semibold text-black">
-                          {order.items.map((item) => item.vegetable).join(", ")}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <span className="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                        View Details →
-                      </span>
-                    </div>
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="text-xl font-semibold text-black mb-1">
+                      {order.order_number}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      Created: {formatDate(order.created_at)}
+                    </p>
                   </div>
-                </Link>
+                  <Badge variant={getStatusVariant(order.status) as any}>
+                    {order.status}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Items</p>
+                    <p className="font-semibold text-black">{order.items.length}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Total Quantity</p>
+                    <p className="font-semibold text-black">
+                      {getTotalQuantity(order.items)} kg
+                    </p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-sm text-gray-600">Vegetables</p>
+                    <p className="font-semibold text-black">
+                      {order.items.map((item) => item.vegetable).join(", ")}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <Button asChild variant="ghost" size="sm">
+                    <Link href={`/farmer/orders/${order.id}`}>
+                      View Details →
+                    </Link>
+                  </Button>
+                </div>
               </Card>
             ))}
           </div>
         )}
-      </div>
+      </Container>
     </div>
   );
 }

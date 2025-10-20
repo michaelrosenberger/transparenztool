@@ -4,6 +4,26 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Card from "@/app/components/Card";
+import Container from "@/app/components/Container";
+import PageSkeleton from "@/app/components/PageSkeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Occupation = "Farmer" | "Logistik" | "Enduser";
 
@@ -108,119 +128,116 @@ export default function Profile() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-[#0a0a0a]">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-2 text-white">Profile Settings</h1>
-        <p className="text-gray-300 mb-8">{user?.email}</p>
+    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
+      <Container>
+        <h1 className="text-4xl font-bold mb-2">Profile Settings</h1>
+        <p className="text-muted-foreground mb-8">{user?.email}</p>
 
-        {message && (
-          <div
-            className={`mb-6 p-4 rounded-lg ${
-              message.type === "success"
-                ? "bg-green-100 border border-green-400 text-green-700"
-                : "bg-red-100 border border-red-400 text-red-700"
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
+        <AlertDialog open={!!message} onOpenChange={() => setMessage(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {message?.type === "success" ? "Success" : "Error"}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {message?.text}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogAction onClick={() => setMessage(null)}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Profile Information */}
         <Card title="Profile Information" className="mb-6">
           <form onSubmit={handleSaveProfile} className="space-y-4">
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium mb-2 text-black">
-                Full Name
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full Name</Label>
+              <Input
                 id="fullName"
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-black"
                 placeholder="Enter your full name"
               />
             </div>
 
-            <div>
-              <label htmlFor="occupation" className="block text-sm font-medium mb-2 text-black">
-                Occupation
-              </label>
-              <select
-                id="occupation"
+            <div className="space-y-2">
+              <Label htmlFor="occupation">Occupation</Label>
+              <Select
                 value={occupation}
-                onChange={(e) => setOccupation(e.target.value as Occupation)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-black"
+                onValueChange={(value) => setOccupation(value as Occupation)}
               >
-                <option value="">Select your occupation</option>
-                <option value="Farmer">Farmer</option>
-                <option value="Logistik">Logistik</option>
-                <option value="Enduser">Enduser</option>
-              </select>
+                <SelectTrigger                 
+                  className="w-full"
+                >
+                  <SelectValue placeholder="Select your occupation" />
+                </SelectTrigger>
+                <SelectContent
+                  className="w-full"
+                >
+                  <SelectItem value="Farmer">Farmer</SelectItem>
+                  <SelectItem value="Logistik">Logistik</SelectItem>
+                  <SelectItem value="Enduser">Enduser</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            <button
+            <Button
               type="submit"
               disabled={saving}
-              className="w-full rounded-full bg-black text-white font-medium py-3 px-4 hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              size="lg"
+              className="w-full"
             >
-              {saving ? "Saving..." : "Save Profile"}
-            </button>
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
           </form>
         </Card>
 
         {/* Change Password */}
         <Card title="Change Password">
           <form onSubmit={handleChangePassword} className="space-y-4">
-            <div>
-              <label htmlFor="newPassword" className="block text-sm font-medium mb-2 text-black">
-                New Password
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">New Password</Label>
+              <Input
                 id="newPassword"
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-black"
                 placeholder="Enter new password"
               />
-              <p className="text-xs text-gray-600 mt-1">
+              <p className="text-xs text-muted-foreground">
                 Must be at least 6 characters
               </p>
             </div>
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2 text-black">
-                Confirm New Password
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <Input
                 id="confirmPassword"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-black"
                 placeholder="Confirm new password"
               />
             </div>
 
-            <button
+            <Button
               type="submit"
               disabled={saving || !newPassword || !confirmPassword}
-              className="w-full rounded-full bg-black text-white font-medium py-3 px-4 hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              size="lg"
+              className="w-full"
             >
               {saving ? "Changing..." : "Change Password"}
-            </button>
+            </Button>
           </form>
         </Card>
-      </div>
+      </Container>
     </div>
   );
 }

@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Card from "@/app/components/Card";
+import Container from "@/app/components/Container";
+import PageSkeleton from "@/app/components/PageSkeleton";
 
 export default function EnduserPage() {
   const [user, setUser] = useState<any>(null);
@@ -34,22 +36,18 @@ export default function EnduserPage() {
   }, [router, supabase.auth]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
-        <div className="text-lg text-white">Loading...</div>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   const fullName = user?.user_metadata?.full_name || "Customer";
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-[#0a0a0a]">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-5xl font-bold mb-4 text-white">
+    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
+      <Container>
+        <h1 className="text-5xl font-bold mb-4">
           Welcome, {fullName}! 🛒
         </h1>
-        <p className="text-xl text-gray-300 mb-8">
+        <p className="text-xl text-muted-foreground mb-8">
           Your Consumer Dashboard
         </p>
 
@@ -60,7 +58,7 @@ export default function EnduserPage() {
             track orders, and view the complete journey of your food from farm to table.
           </p>
         </Card>
-      </div>
+      </Container>
     </div>
   );
 }

@@ -4,6 +4,18 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useParams } from "next/navigation";
 import Card from "@/app/components/Card";
+import Container from "@/app/components/Container";
+import PageSkeleton from "@/app/components/PageSkeleton";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 interface Order {
   id: string;
@@ -109,16 +121,16 @@ export default function LogistikOrderDetailPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusVariant = (status: string) => {
     switch (status) {
       case "Announced":
-        return "bg-blue-100 text-blue-800 border-blue-200";
+        return "announced";
       case "Delivered":
-        return "bg-green-100 text-green-800 border-green-200";
+        return "delivered";
       case "Accepted":
-        return "bg-purple-100 text-purple-800 border-purple-200";
+        return "accepted";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return "outline";
     }
   };
 
@@ -139,25 +151,20 @@ export default function LogistikOrderDetailPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
-        <div className="text-lg text-white">Loading...</div>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   if (!order) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Card>
           <div className="text-center py-8">
             <p className="text-gray-600 mb-4">Order not found</p>
-            <button
+            <Button
               onClick={() => router.push("/logistik/orders/delivered")}
-              className="rounded-full bg-black text-white font-medium py-2 px-6 hover:bg-gray-800 transition-colors"
             >
               Back to Delivered Orders
-            </button>
+            </Button>
           </div>
         </Card>
       </div>
@@ -167,29 +174,34 @@ export default function LogistikOrderDetailPage() {
   const isDelivered = order.status === "Delivered";
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-[#0a0a0a]">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
+      <Container>
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-4xl font-bold text-white">Order Details</h1>
-          <button
+          <h1 className="text-4xl font-bold">Order Details</h1>
+          <Button
             onClick={() => router.push(isDelivered ? "/logistik/orders/delivered" : "/logistik/orders/accepted")}
-            className="text-gray-300 hover:text-white transition-colors"
+            variant="ghost"
+            className="text-muted-foreground hover:text-foreground"
           >
             ← Back
-          </button>
+          </Button>
         </div>
 
-        {message && (
-          <div
-            className={`mb-6 p-4 rounded-lg ${
-              message.type === "success"
-                ? "bg-green-100 border border-green-400 text-green-700"
-                : "bg-red-100 border border-red-400 text-red-700"
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
+        <AlertDialog open={!!message} onOpenChange={() => setMessage(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {message?.type === "success" ? "Success" : "Error"}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {message?.text}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogAction onClick={() => setMessage(null)}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <Card className="mb-6">
           <div className="flex items-start justify-between mb-6">
@@ -199,13 +211,9 @@ export default function LogistikOrderDetailPage() {
               </h2>
               <p className="text-gray-600 text-lg">Farmer: {order.farmer_name}</p>
             </div>
-            <span
-              className={`px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(
-                order.status
-              )}`}
-            >
+            <Badge variant={getStatusVariant(order.status) as any}>
               {order.status}
-            </span>
+            </Badge>
           </div>
 
           <div className="grid grid-cols-2 gap-4 py-4 border-t border-b border-gray-200">
@@ -257,13 +265,14 @@ export default function LogistikOrderDetailPage() {
               Review the order details above and accept the delivery to proceed with logistics processing.
             </p>
             
-            <button
+            <Button
               onClick={acceptOrder}
               disabled={accepting}
-              className="w-full rounded-full bg-black text-white font-medium py-3 px-6 hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              size="lg"
+              className="w-full"
             >
               {accepting ? "Accepting..." : "Accept Order"}
-            </button>
+            </Button>
           </Card>
         )}
 
@@ -276,7 +285,7 @@ export default function LogistikOrderDetailPage() {
             </div>
           </Card>
         )}
-      </div>
+      </Container>
     </div>
   );
 }

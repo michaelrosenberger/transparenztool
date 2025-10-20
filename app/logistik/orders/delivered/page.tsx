@@ -4,7 +4,10 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Card from "@/app/components/Card";
+import Container from "@/app/components/Container";
+import PageSkeleton from "@/app/components/PageSkeleton";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 interface Order {
   id: string;
@@ -77,27 +80,24 @@ export default function DeliveredOrdersPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
-        <div className="text-lg text-white">Loading...</div>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-[#0a0a0a]">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
+      <Container>
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-4xl font-bold text-white">Delivered Orders</h1>
-          <button
+          <h1 className="text-4xl font-bold">Delivered Orders</h1>
+          <Button
             onClick={() => router.push("/logistik")}
-            className="text-gray-300 hover:text-white transition-colors"
+            variant="ghost"
+            className="text-muted-foreground hover:text-foreground"
           >
             ← Back to Dashboard
-          </button>
+          </Button>
         </div>
 
-        <p className="text-gray-300 mb-6">
+        <p className="text-muted-foreground mb-6">
           Review and accept delivered orders from farmers
         </p>
 
@@ -111,56 +111,54 @@ export default function DeliveredOrdersPage() {
           <div className="space-y-4">
             {orders.map((order) => (
               <Card key={order.id}>
-                <Link href={`/logistik/orders/${order.id}`}>
-                  <div className="cursor-pointer hover:bg-gray-50 transition-colors p-2 -m-2 rounded-md">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="text-xl font-semibold text-black mb-1">
-                          {order.order_number}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          Farmer: <span className="font-medium">{order.farmer_name}</span>
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          Delivered: {formatDate(order.updated_at)}
-                        </p>
-                      </div>
-                      <span className="px-3 py-1 rounded-full text-sm font-medium border bg-green-100 text-green-800 border-green-200">
-                        Delivered
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                      <div>
-                        <p className="text-sm text-gray-600">Items</p>
-                        <p className="font-semibold text-black">{order.items.length}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Total Quantity</p>
-                        <p className="font-semibold text-black">
-                          {getTotalQuantity(order.items)} kg
-                        </p>
-                      </div>
-                      <div className="col-span-2">
-                        <p className="text-sm text-gray-600">Vegetables</p>
-                        <p className="font-semibold text-black">
-                          {order.items.map((item) => item.vegetable).join(", ")}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <span className="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                        Review & Accept →
-                      </span>
-                    </div>
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="text-xl font-semibold text-black mb-1">
+                      {order.order_number}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Farmer: <span className="font-medium">{order.farmer_name}</span>
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Delivered: {formatDate(order.updated_at)}
+                    </p>
                   </div>
-                </Link>
+                  <span className="px-3 py-1 rounded-full text-sm font-medium border bg-green-100 text-green-800 border-green-200">
+                    Delivered
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Items</p>
+                    <p className="font-semibold text-black">{order.items.length}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Total Quantity</p>
+                    <p className="font-semibold text-black">
+                      {getTotalQuantity(order.items)} kg
+                    </p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-sm text-gray-600">Vegetables</p>
+                    <p className="font-semibold text-black">
+                      {order.items.map((item) => item.vegetable).join(", ")}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <Button asChild variant="ghost" size="sm">
+                    <Link href={`/logistik/orders/${order.id}`}>
+                      Review & Accept →
+                    </Link>
+                  </Button>
+                </div>
               </Card>
             ))}
           </div>
         )}
-      </div>
+      </Container>
     </div>
   );
 }
