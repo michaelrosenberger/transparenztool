@@ -121,3 +121,16 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom map marker styles */
+.custom-marker {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.custom-marker:hover {
+  transform: scale(1.1);
+  z-index: 1000 !important;
+}

@@ -25,6 +25,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import { X, Minus, Plus } from "lucide-react";
 
 type Vegetable = "Tomatoes" | "Carrots" | "Potatoes" | "Salad";
 
@@ -44,6 +54,9 @@ export default function NewOrderPage() {
   const [selectedVegetable, setSelectedVegetable] = useState<Vegetable>("Tomatoes");
   const [quantity, setQuantity] = useState<number>(1);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerVegetable, setDrawerVegetable] = useState<Vegetable>("Tomatoes");
+  const [drawerQuantity, setDrawerQuantity] = useState<number>(1);
   
   const router = useRouter();
   const supabase = createClient();
@@ -112,6 +125,43 @@ export default function NewOrderPage() {
     const newItems = [...items];
     newItems[index].quantity = newQuantity;
     setItems(newItems);
+  };
+
+  const openDrawer = (vegetable: Vegetable) => {
+    setDrawerVegetable(vegetable);
+    setDrawerQuantity(1);
+    setDrawerOpen(true);
+  };
+
+  const handleDrawerSubmit = () => {
+    if (drawerQuantity <= 0) {
+      setMessage({ type: "error", text: "Quantity must be greater than 0" });
+      return;
+    }
+
+    // Check if vegetable already exists
+    const existingIndex = items.findIndex(item => item.vegetable === drawerVegetable);
+    
+    if (existingIndex >= 0) {
+      // Update existing item
+      const newItems = [...items];
+      newItems[existingIndex].quantity += drawerQuantity;
+      setItems(newItems);
+    } else {
+      // Add new item
+      setItems([...items, { vegetable: drawerVegetable, quantity: drawerQuantity }]);
+    }
+
+    setDrawerOpen(false);
+    setMessage(null);
+  };
+
+  const incrementDrawerQuantity = () => {
+    setDrawerQuantity(prev => prev + 5);
+  };
+
+  const decrementDrawerQuantity = () => {
+    setDrawerQuantity(prev => Math.max(1, prev - 5));
   };
 
   const handleSubmit = async () => {
@@ -248,6 +298,23 @@ export default function NewOrderPage() {
         </Card>
 
         <Card className="mb-6">
+          <h2 className="text-2xl font-semibold mb-4 text-black">Quick Add Vegetables</h2>
+          <p className="text-gray-600 mb-4">Click on a vegetable to set quantity</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {VEGETABLES.map((veg) => (
+              <Button
+                key={veg}
+                onClick={() => openDrawer(veg)}
+                variant="outline"
+                className="h-auto text-md font-medium"
+              >
+                {veg}
+              </Button>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="mb-6">
           <h2 className="text-2xl font-semibold mb-4 text-black">Order Items</h2>
           
           {items.length === 0 ? (
@@ -276,10 +343,10 @@ export default function NewOrderPage() {
                   </div>
                   <Button
                     onClick={() => removeItem(index)}
-                    variant="destructive"
+                    variant="default"
                     size="sm"
                   >
-                    Remove
+                    <X className="h-4 w-4" />
                   </Button>
                 </div>
               ))}
@@ -318,6 +385,55 @@ export default function NewOrderPage() {
             {submitting ? "Creating Order..." : "Create Order"}
           </Button>
         </div>
+
+        <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+          <DrawerContent>
+            <DrawerHeader className="text-center">
+              <DrawerTitle className="text-2xl font-bold">{drawerVegetable}</DrawerTitle>
+              <DrawerDescription>Set your quantity.</DrawerDescription>
+            </DrawerHeader>
+            
+            <div className="flex flex-col items-center justify-center p-8 space-y-8">
+              <div className="flex items-center justify-center gap-8">
+                <Button
+                  onClick={decrementDrawerQuantity}
+                  variant="outline"
+                  size="icon"
+                  className="h-12 w-12 rounded-full"
+                >
+                  <Minus className="h-6 w-6" />
+                </Button>
+                
+                <div className="text-center w-30">
+                  <div className="text-7xl font-bold">{drawerQuantity}</div>
+                  <div className="text-sm text-muted-foreground mt-2">KG</div>
+                </div>
+                
+                <Button
+                  onClick={incrementDrawerQuantity}
+                  variant="outline"
+                  size="icon"
+                  className="h-12 w-12 rounded-full"
+                >
+                  <Plus className="h-6 w-6" />
+                </Button>
+              </div>
+            </div>
+
+            <DrawerFooter>
+              <div className="flex gap-4 w-full">
+                <Button onClick={handleDrawerSubmit} size="lg" className="flex-1">
+                  Submit
+                </Button>
+                <DrawerClose asChild>
+                  <Button variant="outline" size="lg" className="flex-1">
+                    Cancel
+                  </Button>
+                </DrawerClose>
+              </div>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
       </Container>
     </div>
   );

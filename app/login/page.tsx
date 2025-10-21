@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Card from "@/app/components/Card";
+import Container from "@/app/components/Container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,65 +41,69 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <div className="w-full max-w-lg">
-        <Card>
-          <h1 className="text-3xl font-bold mb-6 text-center text-black">Login</h1>
+    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
+      <Container>
+        <div className="flex items-center justify-center">
+          <div className="w-full">
+            <Card>
+              <h1 className="text-3xl font-bold mb-6 text-center text-black">Login</h1>
 
-          {error && (
-            <div className="mb-4 p-3 bg-destructive/15 border border-destructive text-destructive rounded-md">
-              {error}
-            </div>
-          )}
+              {error && (
+                <div className="mb-4 p-3 bg-destructive/15 border border-destructive text-destructive rounded-md">
+                  {error}
+                </div>
+              )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="you@example.com"
-              />
-            </div>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="you@example.com"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="••••••••"
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    placeholder="••••••••"
+                  />
+                </div>
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full"
-              size="lg"
-            >
-              {loading ? "Logging in..." : "Login"}
-            </Button>
-          </form>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full"
+                  size="lg"
+                >
+                  {loading ? "Logging in..." : "Login"}
+                </Button>
+              </form>
 
-          <div className="mt-6 text-center text-sm">
-            <p className="text-gray-600">
-              Don't have an account?{" "}
-              <Link
-                href="/register"
-                className="font-medium hover:underline"
-              >
-                Register here
-              </Link>
-            </p>
+              <div className="mt-6 text-center text-sm">
+                <p className="text-gray-600">
+                  Don't have an account?{" "}
+                  <Link
+                    href="/register"
+                    className="font-medium hover:underline"
+                  >
+                    Register here
+                  </Link>
+                </p>
+              </div>
+            </Card>
           </div>
-        </Card>
-      </div>
+        </div>
+      </Container>
     </div>
   );
 }

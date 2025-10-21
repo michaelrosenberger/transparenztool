@@ -9,6 +9,15 @@ import PageSkeleton from "@/app/components/PageSkeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableFooter,
+} from "@/components/ui/table";
+import {
   AlertDialog,
   AlertDialogContent,
   AlertDialogDescription,
@@ -211,32 +220,30 @@ export default function OrderDetailPage() {
 
         <Card className="mb-6">
           <h3 className="text-2xl font-semibold mb-4 text-black">Order Items</h3>
-          <div className="space-y-3">
-            {order.items.map((item, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-4 border border-gray-200 rounded-md"
-              >
-                <span className="font-medium text-black text-lg">{item.vegetable}</span>
-                <span className="font-semibold text-black">
-                  {item.quantity} kg
-                </span>
-              </div>
-            ))}
-            
-            <div className="pt-4 border-t border-gray-200">
-              <div className="flex justify-between items-center">
-                <span className="font-semibold text-black text-lg">Total Items:</span>
-                <span className="font-bold text-black text-lg">{order.items.length}</span>
-              </div>
-              <div className="flex justify-between items-center mt-2">
-                <span className="font-semibold text-black text-lg">Total Quantity:</span>
-                <span className="font-bold text-black text-lg">
-                  {getTotalQuantity()} kg
-                </span>
-              </div>
-            </div>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[100px]">No.</TableHead>
+                <TableHead>Vegetable</TableHead>
+                <TableHead className="text-right">Quantity</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {order.items.map((item, index) => (
+                <TableRow key={index}>
+                  <TableCell className="font-medium">{index + 1}</TableCell>
+                  <TableCell className="text-black font-medium">{item.vegetable}</TableCell>
+                  <TableCell className="text-right text-black font-semibold">{item.quantity} kg</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TableCell colSpan={2} className="font-semibold">Total Items: {order.items.length}</TableCell>
+                <TableCell className="text-right font-bold">{getTotalQuantity()} kg</TableCell>
+              </TableRow>
+            </TableFooter>
+          </Table>
         </Card>
 
         <Card>
