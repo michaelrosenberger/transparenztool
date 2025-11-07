@@ -84,27 +84,26 @@ export default function DeliveredOrdersPage() {
   }
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
-      <Container>
+    <Container asPage>
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-4xl font-bold">Delivered Orders</h1>
+          <h1 className="mb-4">Delivered Orders</h1>
           <Button
             onClick={() => router.push("/logistik")}
             variant="ghost"
-            className="text-muted-foreground hover:text-foreground"
+            className="hover:text-foreground"
           >
             ← Back to Dashboard
           </Button>
         </div>
 
-        <p className="text-muted-foreground mb-6">
+        <p className="mb-6">
           Review and accept delivered orders from farmers
         </p>
 
         {orders.length === 0 ? (
           <Card>
             <div className="text-center py-12">
-              <p className="text-gray-600">No delivered orders available</p>
+              <p>No delivered orders available</p>
             </div>
           </Card>
         ) : (
@@ -113,34 +112,34 @@ export default function DeliveredOrdersPage() {
               <Card key={order.id}>
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h3 className="text-xl font-semibold text-black mb-1">
+                    <h3 className="mb-1">
                       {order.order_number}
                     </h3>
-                    <p className="text-sm text-gray-600">
+                    <p>
                       Farmer: <span className="font-medium">{order.farmer_name}</span>
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p>
                       Delivered: {formatDate(order.updated_at)}
                     </p>
                   </div>
-                  <span className="px-3 py-1 rounded-full text-sm font-medium border bg-green-100 text-green-800 border-green-200">
+                  <span className="px-3 py-1 rounded-full font-medium border bg-green-100 text-green-800 border-green-200">
                     Delivered
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                   <div>
-                    <p className="text-sm text-gray-600">Items</p>
+                    <p>Items</p>
                     <p className="font-semibold text-black">{order.items.length}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Total Quantity</p>
+                    <p>Total Quantity</p>
                     <p className="font-semibold text-black">
                       {getTotalQuantity(order.items)} kg
                     </p>
                   </div>
                   <div className="col-span-2">
-                    <p className="text-sm text-gray-600">Vegetables</p>
+                    <p>Vegetables</p>
                     <p className="font-semibold text-black">
                       {order.items.map((item) => item.vegetable).join(", ")}
                     </p>
@@ -158,7 +157,6 @@ export default function DeliveredOrdersPage() {
             ))}
           </div>
         )}
-      </Container>
-    </div>
+    </Container>
   );
 }

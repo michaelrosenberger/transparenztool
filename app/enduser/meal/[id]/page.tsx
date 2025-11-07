@@ -78,7 +78,10 @@ export default function MealDetailPage() {
 
       setUser(user);
       
-      // Get user's location
+      // Set default location immediately
+      setUserLocation({ lat: 48.2082, lng: 16.3738 }); // Vienna default
+      
+      // Try to get user's actual location with timeout
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
@@ -89,8 +92,11 @@ export default function MealDetailPage() {
           },
           (error) => {
             console.error("Error getting location:", error);
-            // Default location if geolocation fails
-            setUserLocation({ lat: 48.2082, lng: 16.3738 }); // Vienna
+          },
+          {
+            timeout: 5000, // 5 second timeout
+            enableHighAccuracy: false,
+            maximumAge: 300000 // Accept cached location up to 5 minutes old
           }
         );
       }
@@ -158,9 +164,45 @@ export default function MealDetailPage() {
     }
   };
 
+  // Calculate distance between two coordinates using Haversine formula
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Radius of the Earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
   const calculateAverageDistance = () => {
-    if (!meal) return 0;
-    const total = meal.vegetables.reduce((sum, veg) => sum + veg.distance, 0);
+    if (!meal || !userLocation) return 0;
+    
+    const storageLocation = { 
+      lat: 48.28623854975886, 
+      lng: 15.690691967244055 
+    };
+    
+    // Calculate distance: farm → storage + storage → user for each vegetable
+    const storageToUserDistance = calculateDistance(
+      storageLocation.lat,
+      storageLocation.lng,
+      userLocation.lat,
+      userLocation.lng
+    );
+    
+    const total = meal.vegetables.reduce((sum, veg) => {
+      const farmToStorageDistance = calculateDistance(
+        veg.location.lat,
+        veg.location.lng,
+        storageLocation.lat,
+        storageLocation.lng
+      );
+      return sum + farmToStorageDistance + storageToUserDistance;
+    }, 0);
+    
     return (total / meal.vegetables.length).toFixed(1);
   };
 
@@ -173,7 +215,7 @@ export default function MealDetailPage() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Card>
           <div className="text-center py-8">
-            <p className="text-gray-600 mb-4">Meal not found</p>
+            <p className="mb-4">Meal not found</p>
             <Button onClick={() => router.push("/enduser")}>
               Back to Dashboard
             </Button>
@@ -184,14 +226,13 @@ export default function MealDetailPage() {
   }
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
-      <Container>
+    <Container asPage>
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-4xl font-bold">Meal Details</h1>
+          <h1 className="mb-4">Meal Details</h1>
           <Button
             onClick={() => router.push("/enduser")}
             variant="ghost"
-            className="text-muted-foreground hover:text-foreground"
+            className="hover:text-foreground"
           >
             ← Back to Dashboard
           </Button>
@@ -201,10 +242,10 @@ export default function MealDetailPage() {
         <Card className="mb-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h2 className="text-3xl font-bold text-black mb-2">{meal.name}</h2>
-              <p className="text-gray-600">{meal.description}</p>
+              <h2 className="mb-2">{meal.name}</h2>
+              <p>{meal.description}</p>
             </div>
-            <Badge variant="outline" className="text-sm">
+            <Badge variant="outline">
               Prepared: {new Date(meal.prepared_date).toLocaleDateString()}
             </Badge>
           </div>
@@ -212,7 +253,7 @@ export default function MealDetailPage() {
 
         {/* Ingredients */}
         <Card className="mb-6">
-          <h3 className="text-2xl font-semibold mb-4 text-black">Ingredients</h3>
+          <h3 className="mb-4">Ingredients</h3>
           <Table>
             <TableHeader>
               <TableRow>
@@ -233,8 +274,8 @@ export default function MealDetailPage() {
 
         {/* Vegetable Sources */}
         <Card className="mb-6">
-          <h3 className="text-2xl font-semibold mb-4 text-black">Vegetable Sources</h3>
-          <p className="text-gray-600 mb-4">
+          <h3 className="mb-4">Vegetable Sources</h3>
+          <p className="mb-4">
             All vegetables are sourced from local farmers in your region
           </p>
           <Table>
@@ -251,7 +292,7 @@ export default function MealDetailPage() {
                 <TableRow key={index}>
                   <TableCell className="font-medium text-black">{veg.vegetable}</TableCell>
                   <TableCell className="text-black">{veg.farmer}</TableCell>
-                  <TableCell className="text-gray-600 text-sm">
+                  <TableCell>
                     <div className="flex items-center gap-1">
                       <MapPin className="h-4 w-4" />
                       {veg.location.address}
@@ -277,18 +318,23 @@ export default function MealDetailPage() {
 
         {/* Map */}
         <Card>
-          <h3 className="text-2xl font-semibold mb-4 text-black">Farm Locations</h3>
-          <p className="text-gray-600 mb-4">
+          <h3 className="mb-4">Farm Locations</h3>
+          <p className="mb-4">
             See where your vegetables were grown on the map below
           </p>
           <div className="h-96 rounded-lg overflow-hidden">
             <MapComponent 
               vegetables={meal.vegetables}
               userLocation={userLocation}
+              storageLocation={{ 
+                lat: 48.28623854975886, 
+                lng: 15.690691967244055, 
+                address: "Storage Facility, Herzogenburg" 
+              }}
+              mealName={meal.name}
             />
           </div>
         </Card>
-      </Container>
-    </div>
+    </Container>
   );
 }

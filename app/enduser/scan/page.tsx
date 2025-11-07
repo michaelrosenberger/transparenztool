@@ -52,6 +52,16 @@ export default function ScanPage() {
   const startScanning = async () => {
     try {
       setError(null);
+      
+      // Check if scanner already exists and stop it first
+      if (scannerRef.current) {
+        try {
+          await scannerRef.current.stop();
+        } catch (e) {
+          console.log("Scanner was not running");
+        }
+      }
+      
       const html5QrCode = new Html5Qrcode("qr-reader");
       scannerRef.current = html5QrCode;
 
@@ -60,24 +70,29 @@ export default function ScanPage() {
         {
           fps: 10,
           qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0
         },
         (decodedText) => {
           // Successfully scanned
+          console.log("QR Code scanned:", decodedText);
           html5QrCode.stop().then(() => {
             setScanning(false);
+            scannerRef.current = null;
             // Navigate to meal detail page with the scanned meal ID
             router.push(`/enduser/meal/${decodedText}`);
           }).catch(console.error);
         },
         (errorMessage) => {
-          // Scanning error (can be ignored, happens frequently)
+          // Scanning error (can be ignored, happens frequently during scanning)
         }
       );
 
       setScanning(true);
     } catch (err: any) {
-      setError(err.message || "Failed to start camera");
+      console.error("Scanner error:", err);
+      setError(err.message || "Failed to start camera. Please ensure camera permissions are granted.");
       setScanning(false);
+      scannerRef.current = null;
     }
   };
 
@@ -95,22 +110,21 @@ export default function ScanPage() {
   }
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
-      <Container>
+    <Container asPage>
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-4xl font-bold">Scan QR Code</h1>
+          <h1 className="mb-4">Scan QR Code</h1>
           <Button
             onClick={() => router.push("/enduser")}
             variant="ghost"
-            className="text-muted-foreground hover:text-foreground"
+            className="hover:text-foreground"
           >
             ← Back to Dashboard
           </Button>
         </div>
 
         <Card>
-          <h2 className="text-2xl font-semibold mb-4 text-black">Scan Your Meal</h2>
-          <p className="text-gray-700 mb-6">
+          <h2 className="mb-4">Scan Your Meal</h2>
+          <p className="mb-6">
             Position the QR code within the frame to scan and view detailed meal information.
           </p>
 
@@ -120,22 +134,34 @@ export default function ScanPage() {
             </div>
           )}
 
-          <div className="mb-6">
-            <div 
-              id="qr-reader" 
-              className="w-full max-w-md mx-auto rounded-lg overflow-hidden"
-              style={{ display: scanning ? "block" : "none" }}
-            />
-            
+          <div className="mb-6 w-full max-w-md mx-auto">
             {!scanning && (
-              <div className="w-full max-w-md mx-auto h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-                <div className="text-center text-gray-500">
-                  <Camera className="h-16 w-16 mx-auto mb-2" />
-                  <p>Camera preview will appear here</p>
+              <div className="w-full aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
+                <div className="text-center">
+                  <Camera className="h-16 w-16 mx-auto mb-2 text-gray-400" />
+                  <p className="text-gray-600">Camera preview will appear here</p>
                 </div>
               </div>
             )}
+            
+            <div 
+              id="qr-reader" 
+              className="w-full rounded-lg overflow-hidden"
+              style={{ display: scanning ? "block" : "none" }}
+            />
           </div>
+
+          <style jsx global>{`
+            #qr-reader video {
+              width: 100% !important;
+              height: auto !important;
+              max-width: 100% !important;
+            }
+            #qr-reader canvas {
+              width: 100% !important;
+              height: auto !important;
+            }
+          `}</style>
 
           <div className="flex gap-4 justify-center">
             {!scanning ? (
@@ -150,15 +176,7 @@ export default function ScanPage() {
               </Button>
             )}
           </div>
-
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
-            <p className="text-sm text-blue-800">
-              <strong>Tip:</strong> Make sure the QR code is well-lit and within the scanning frame. 
-              The scanner will automatically detect and process the code.
-            </p>
-          </div>
         </Card>
-      </Container>
-    </div>
+    </Container>
   );
 }

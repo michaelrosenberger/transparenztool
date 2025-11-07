@@ -44,19 +44,18 @@ export default function EnduserPage() {
   const fullName = user?.user_metadata?.full_name || "Customer";
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
-      <Container>
-        <h1 className="text-5xl font-bold mb-4">
-          Welcome, {fullName}! 🛒
+    <Container asPage>
+        <h1 className="mb-4">
+          Welcome, {fullName}!
         </h1>
-        <p className="text-xl text-muted-foreground mb-8">
+        <p className="text-xl mb-8">
           Your Consumer Dashboard
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
-            <h2 className="text-2xl font-semibold mb-4 text-black">Scan Meal QR Code</h2>
-            <p className="text-gray-700 mb-6">
+            <h2 className="mb-4">Scan Meal QR Code</h2>
+            <p className="mb-6">
               Scan the QR code on your meal package to discover detailed information about its ingredients, 
               the farmers who grew the vegetables, and trace the journey from farm to your table.
             </p>
@@ -71,8 +70,8 @@ export default function EnduserPage() {
           </Card>
 
           <Card>
-            <h2 className="text-2xl font-semibold mb-4 text-black">Demo QR Code</h2>
-            <p className="text-gray-700 mb-6">
+            <h2 className="mb-4">Demo QR Code</h2>
+            <p className="mb-6">
               View a demo QR code to test the scanning functionality and see how meal information is displayed.
             </p>
             <Button 
@@ -86,8 +85,8 @@ export default function EnduserPage() {
           </Card>
 
           <Card>
-            <h2 className="text-2xl font-semibold mb-4 text-black">View Demo Meal</h2>
-            <p className="text-gray-700 mb-6">
+            <h2 className="mb-4">View Demo Meal</h2>
+            <p className="mb-6">
               Skip the scanning and directly view a sample meal with all details including ingredients, sources, and map.
             </p>
             <Button 
@@ -100,7 +99,6 @@ export default function EnduserPage() {
             </Button>
           </Card>
         </div>
-      </Container>
-    </div>
+    </Container>
   );
 }

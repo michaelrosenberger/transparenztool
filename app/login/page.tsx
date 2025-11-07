@@ -41,13 +41,11 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
-      <Container>
+    <Container asPage>
         <div className="flex items-center justify-center">
           <div className="w-full">
+            <h1 className="mb-4">Login</h1>
             <Card>
-              <h1 className="text-3xl font-bold mb-6 text-center text-black">Login</h1>
-
               {error && (
                 <div className="mb-4 p-3 bg-destructive/15 border border-destructive text-destructive rounded-md">
                   {error}
@@ -89,8 +87,8 @@ export default function Login() {
                 </Button>
               </form>
 
-              <div className="mt-6 text-center text-sm">
-                <p className="text-gray-600">
+              <div className="mt-6 text-center">
+                <p>
                   Don't have an account?{" "}
                   <Link
                     href="/register"
@@ -103,7 +101,6 @@ export default function Login() {
             </Card>
           </div>
         </div>
-      </Container>
-    </div>
+    </Container>
   );
 }

@@ -151,7 +151,7 @@ export default function OrderDetailPage() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Card>
           <div className="text-center py-8">
-            <p className="text-gray-600 mb-4">Order not found</p>
+            <p className="mb-4">Order not found</p>
             <Button
               onClick={() => router.push("/farmer/orders")}
             >
@@ -164,14 +164,13 @@ export default function OrderDetailPage() {
   }
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
-      <Container>
+    <Container asPage>
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-4xl font-bold">Order Details</h1>
+          <h1 className="mb-4">Order Details</h1>
           <Button
             onClick={() => router.push("/farmer/orders")}
             variant="ghost"
-            className="text-muted-foreground hover:text-foreground"
+            className="hover:text-foreground"
           >
             ← Back to Orders
           </Button>
@@ -196,10 +195,10 @@ export default function OrderDetailPage() {
         <Card className="mb-6">
           <div className="flex items-start justify-between mb-6">
             <div>
-              <h2 className="text-3xl font-bold text-black mb-2">
+              <h2 className="mb-2">
                 {order.order_number}
               </h2>
-              <p className="text-gray-600">Farmer: {order.farmer_name}</p>
+              <p>Farmer: {order.farmer_name}</p>
             </div>
             <Badge variant={getStatusVariant(order.status) as any}>
               {order.status}
@@ -208,18 +207,18 @@ export default function OrderDetailPage() {
 
           <div className="grid grid-cols-2 gap-4 py-4 border-t border-b border-gray-200">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Created</p>
+              <p className="mb-1">Created</p>
               <p className="font-medium text-black">{formatDate(order.created_at)}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600 mb-1">Last Updated</p>
+              <p className="mb-1">Last Updated</p>
               <p className="font-medium text-black">{formatDate(order.updated_at)}</p>
             </div>
           </div>
         </Card>
 
         <Card className="mb-6">
-          <h3 className="text-2xl font-semibold mb-4 text-black">Order Items</h3>
+          <h3 className="mb-4">Order Items</h3>
           <Table>
             <TableHeader>
               <TableRow>
@@ -247,8 +246,8 @@ export default function OrderDetailPage() {
         </Card>
 
         <Card>
-          <h3 className="text-2xl font-semibold mb-4 text-black">Update Status</h3>
-          <p className="text-gray-600 mb-4">
+          <h3 className="mb-4">Update Status</h3>
+          <p className="mb-4">
             Change the order status to track its progress through the supply chain.
           </p>
           
@@ -283,7 +282,6 @@ export default function OrderDetailPage() {
             </Button>
           </div>
         </Card>
-      </Container>
-    </div>
+    </Container>
   );
 }

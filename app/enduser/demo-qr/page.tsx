@@ -12,22 +12,21 @@ export default function DemoQRPage() {
   const [mealId] = useState("meal-001");
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
-      <Container>
+    <Container asPage>
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-4xl font-bold">Demo QR Code</h1>
+          <h1 className="mb-4">Demo QR Code</h1>
           <Button
             onClick={() => router.push("/enduser")}
             variant="ghost"
-            className="text-muted-foreground hover:text-foreground"
+            className="hover:text-foreground"
           >
             ← Back to Dashboard
           </Button>
         </div>
 
         <Card>
-          <h2 className="text-2xl font-semibold mb-4 text-black">Test QR Code</h2>
-          <p className="text-gray-700 mb-6">
+          <h2 className="mb-4">Test QR Code</h2>
+          <p className="mb-6">
             Use this QR code to test the scanning functionality. Scan it with the QR scanner to view meal details.
           </p>
 
@@ -42,7 +41,7 @@ export default function DemoQRPage() {
             </div>
 
             <div className="text-center">
-              <p className="text-sm text-gray-600 mb-2">Meal ID: {mealId}</p>
+              <p className="mb-2">Meal ID: {mealId}</p>
               <Button
                 onClick={() => router.push("/enduser/scan")}
                 size="lg"
@@ -53,7 +52,7 @@ export default function DemoQRPage() {
           </div>
 
           <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
-            <p className="text-sm text-blue-800">
+            <p className="text-blue-800">
               <strong>How to test:</strong>
               <br />
               1. Open the scanner page on your device
@@ -64,7 +63,6 @@ export default function DemoQRPage() {
             </p>
           </div>
         </Card>
-      </Container>
-    </div>
+    </Container>
   );
 }

@@ -44,18 +44,17 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
-      <Container>
-        <h1 className="text-5xl font-bold mb-4">
-          Welcome to Transparenztool
-        </h1>
-        <p className="text-xl text-muted-foreground mb-8">
+    <Container asPage>
+      <h1 className="mb-4">
+        Welcome to Transparenztool
+      </h1>
+        <p className="text-xl mb-8">
           Your platform for supply chain transparency
         </p>
 
         <Card className="mb-6">
-          <h2 className="text-2xl font-semibold mb-4 text-black">Get Started</h2>
-          <p className="text-gray-700 mb-4">
+          <h2 className="mb-4">Get Started</h2>
+          <p className="mb-4">
             To access your personalized dashboard, please log in and complete your profile 
             by selecting your occupation.
           </p>
@@ -77,28 +76,27 @@ export default function Home() {
         </Card>
 
         <div className="grid gap-6 md:grid-cols-3">
-          <Card title="For Farmers ">
-            <p className="text-gray-700">
+          <Card title="For Farmers">
+            <p>
               Manage crops, track shipments, and maintain quality standards with 
               complete transparency.
             </p>
           </Card>
 
-          <Card title="For Logistics 🚚">
-            <p className="text-gray-700">
+          <Card title="For Logistics">
+            <p>
               Optimize routes, manage warehouses, and track deliveries in real-time 
               across your network.
             </p>
           </Card>
 
-          <Card title="For Consumers 🛒">
-            <p className="text-gray-700">
+          <Card title="For Consumers">
+            <p>
               Scan products to see their journey, support sustainable farming, and 
               make informed choices.
             </p>
           </Card>
         </div>
-      </Container>
-    </div>
+    </Container>
   );
 }

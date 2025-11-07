@@ -43,21 +43,20 @@ export default function FarmerPage() {
   const fullName = user?.user_metadata?.full_name || "Farmer";
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
-      <Container>
-        <h1 className="text-5xl font-bold mb-4">
-          Welcome, {fullName}! 🌾
+    <Container asPage>
+        <h1 className="mb-4">
+          Welcome, {fullName}!
         </h1>
-        <p className="text-xl text-muted-foreground mb-8">
+        <p className="text-xl mb-8">
           Your Farmer Dashboard
         </p>
 
         {/* Order Management Section */}
         <Card className="mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-semibold text-black">Order Management</h2>
+            <h2>Order Management</h2>
           </div>
-          <p className="text-gray-700 mb-4">
+          <p className="mb-4">
             Create and manage your vegetable orders. Track order status from announcement 
             to delivery and storage.
           </p>
@@ -81,6 +80,5 @@ export default function FarmerPage() {
         </Card>
 
       </Container>
-    </div>
-  );
+    );
 }

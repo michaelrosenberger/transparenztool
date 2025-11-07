@@ -132,10 +132,9 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
-      <Container>
-        <h1 className="text-4xl font-bold mb-2">Profile Settings</h1>
-        <p className="text-muted-foreground mb-8">{user?.email}</p>
+    <Container asPage>
+        <h1 className="mb-4">Profile Settings</h1>
+        <p className="mb-8">{user?.email}</p>
 
         <AlertDialog open={!!message} onOpenChange={() => setMessage(null)}>
           <AlertDialogContent>
@@ -211,7 +210,7 @@ export default function Profile() {
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Enter new password"
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs">
                 Must be at least 6 characters
               </p>
             </div>
@@ -237,7 +236,6 @@ export default function Profile() {
             </Button>
           </form>
         </Card>
-      </Container>
-    </div>
+    </Container>
   );
 }

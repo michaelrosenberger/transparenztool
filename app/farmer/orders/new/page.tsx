@@ -206,14 +206,13 @@ export default function NewOrderPage() {
   }
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
-      <Container>
+    <Container asPage>
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-4xl font-bold">Create New Order</h1>
+          <h1 className="mb-4">Create New Order</h1>
           <Button
             onClick={() => router.push("/farmer")}
             variant="ghost"
-            className="text-muted-foreground hover:text-foreground"
+            className="hover:text-foreground"
           >
             ← Back to Dashboard
           </Button>
@@ -237,16 +236,16 @@ export default function NewOrderPage() {
 
         <Card className="mb-6">
           <div className="mb-4">
-            <h2 className="text-2xl font-semibold text-black mb-2">Order Details</h2>
+            <h2 className="mb-2">Order Details</h2>
             <div className="flex items-center gap-2">
-              <span className="text-gray-600">Order Number:</span>
+              <span>Order Number:</span>
               <span className="font-mono font-bold text-black">{orderNumber}</span>
             </div>
           </div>
         </Card>
 
         <Card className="mb-6">
-          <h2 className="text-2xl font-semibold mb-4 text-black">Add Vegetables</h2>
+          <h2 className="mb-4">Add Vegetables</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div className="space-y-2">
@@ -280,7 +279,7 @@ export default function NewOrderPage() {
                 step={5}
                 className="w-full"
               />
-              <div className="flex justify-between text-xs text-muted-foreground">
+              <div className="flex justify-between text-xs">
                 <span>1 kg</span>
                 <span>500 kg</span>
               </div>
@@ -298,8 +297,8 @@ export default function NewOrderPage() {
         </Card>
 
         <Card className="mb-6">
-          <h2 className="text-2xl font-semibold mb-4 text-black">Quick Add Vegetables</h2>
-          <p className="text-gray-600 mb-4">Click on a vegetable to set quantity</p>
+          <h2 className="mb-4">Quick Add Vegetables</h2>
+          <p className="mb-4">Click on a vegetable to set quantity</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {VEGETABLES.map((veg) => (
               <Button
@@ -315,10 +314,10 @@ export default function NewOrderPage() {
         </Card>
 
         <Card className="mb-6">
-          <h2 className="text-2xl font-semibold mb-4 text-black">Order Items</h2>
+          <h2 className="mb-4">Order Items</h2>
           
           {items.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">
+            <p className="text-center py-8">
               No items added yet. Add vegetables to your order above.
             </p>
           ) : (
@@ -338,7 +337,7 @@ export default function NewOrderPage() {
                         onChange={(e) => updateItemQuantity(index, parseInt(e.target.value) || 1)}
                         className="w-24 px-3 py-1 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-black"
                       />
-                      <span className="text-gray-600">kg</span>
+                      <span>kg</span>
                     </div>
                   </div>
                   <Button
@@ -406,7 +405,7 @@ export default function NewOrderPage() {
                 
                 <div className="text-center w-30">
                   <div className="text-7xl font-bold">{drawerQuantity}</div>
-                  <div className="text-sm text-muted-foreground mt-2">KG</div>
+                  <div className="mt-2">KG</div>
                 </div>
                 
                 <Button
@@ -434,7 +433,6 @@ export default function NewOrderPage() {
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
-      </Container>
-    </div>
+    </Container>
   );
 }

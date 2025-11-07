@@ -2,8 +2,7 @@ import Container from "./Container";
 
 export default function PageSkeleton() {
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
-      <Container>
+    <Container asPage>
         {/* Header skeleton */}
         <div className="mb-8 animate-pulse">
           <div className="h-12 bg-gray-200 rounded-md w-2/3 mb-4"></div>
@@ -29,7 +28,6 @@ export default function PageSkeleton() {
             </div>
           </div>
         </div>
-      </Container>
-    </div>
+    </Container>
   );
 }

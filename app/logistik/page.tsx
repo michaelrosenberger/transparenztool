@@ -99,21 +99,20 @@ export default function LogistikPage() {
   const fullName = user?.user_metadata?.full_name || "Logistics Partner";
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
-      <Container>
-        <h1 className="text-5xl font-bold mb-4">
-          Welcome, {fullName}! 🚚
+    <Container asPage>
+        <h1 className="mb-4">
+          Welcome, {fullName}!
         </h1>
-        <p className="text-xl text-muted-foreground mb-8">
+        <p className="text-xl mb-8">
           Your Logistics Dashboard
         </p>
 
         {/* Storage Inventory Summary */}
         {mounted && (
           <Card className="mb-6">
-            <h2 className="text-2xl font-semibold mb-4 text-black">Storage Inventory</h2>
+            <h2 className="mb-4">Storage Inventory</h2>
             {storageSummary.length === 0 ? (
-              <p className="text-gray-600 text-center py-8">No items in storage yet</p>
+              <p className="text-center py-8">No items in storage yet</p>
             ) : (
               <div className="space-y-3">
                 {storageSummary.map((item) => (
@@ -129,7 +128,7 @@ export default function LogistikPage() {
                     </div>
                     <div className="text-right">
                       <span className="font-bold text-black text-xl">{item.total_quantity}</span>
-                      <span className="text-gray-600 ml-1">kg</span>
+                      <span className="ml-1">kg</span>
                     </div>
                   </div>
                 ))}
@@ -149,7 +148,7 @@ export default function LogistikPage() {
         {/* Order Management Sections */}
         <div className="grid gap-6 md:grid-cols-2 mb-6">
           <Card title="Delivered Orders">
-            <p className="text-gray-700 mb-4">
+            <p className="mb-4">
               Review and accept orders that have been delivered by farmers. 
               Verify order details and accept them for logistics processing.
             </p>
@@ -162,7 +161,7 @@ export default function LogistikPage() {
           </Card>
 
           <Card title="Accepted Orders">
-            <p className="text-gray-700 mb-4">
+            <p className="mb-4">
               View all orders that have been accepted for logistics processing. 
               These orders are read-only and cannot be modified.
             </p>
@@ -176,6 +175,5 @@ export default function LogistikPage() {
         </div>
 
       </Container>
-    </div>
   );
 }

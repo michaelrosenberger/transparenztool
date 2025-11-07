@@ -84,27 +84,26 @@ export default function AcceptedOrdersPage() {
   }
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
-      <Container>
+    <Container asPage>
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-4xl font-bold">Accepted Orders</h1>
+          <h1 className="mb-4">Accepted Orders</h1>
           <Button
             onClick={() => router.push("/logistik")}
             variant="ghost"
-            className="text-muted-foreground hover:text-foreground"
+            className="hover:text-foreground"
           >
             ← Back to Dashboard
           </Button>
         </div>
 
-        <p className="text-muted-foreground mb-6">
+        <p className="mb-6">
           View all orders that have been accepted for logistics processing (Read-only)
         </p>
 
         {orders.length === 0 ? (
           <Card>
             <div className="text-center py-12">
-              <p className="text-gray-600">No accepted orders yet</p>
+              <p>No accepted orders yet</p>
             </div>
           </Card>
         ) : (
@@ -113,34 +112,34 @@ export default function AcceptedOrdersPage() {
               <Card key={order.id}>
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h3 className="text-xl font-semibold text-black mb-1">
+                    <h3 className="mb-1">
                       {order.order_number}
                     </h3>
-                    <p className="text-sm text-gray-600">
+                    <p>
                       Farmer: <span className="font-medium">{order.farmer_name}</span>
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p>
                       Accepted: {formatDate(order.updated_at)}
                     </p>
                   </div>
-                  <span className="px-3 py-1 rounded-full text-sm font-medium border bg-purple-100 text-purple-800 border-purple-200">
+                  <span className="px-3 py-1 rounded-full font-medium border bg-purple-100 text-purple-800 border-purple-200">
                     Accepted
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                   <div>
-                    <p className="text-sm text-gray-600">Items</p>
+                    <p>Items</p>
                     <p className="font-semibold text-black">{order.items.length}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Total Quantity</p>
+                    <p>Total Quantity</p>
                     <p className="font-semibold text-black">
                       {getTotalQuantity(order.items)} kg
                     </p>
                   </div>
                   <div className="col-span-2">
-                    <p className="text-sm text-gray-600">Vegetables</p>
+                    <p>Vegetables</p>
                     <p className="font-semibold text-black">
                       {order.items.map((item) => item.vegetable).join(", ")}
                     </p>
@@ -148,7 +147,7 @@ export default function AcceptedOrdersPage() {
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
-                  <span className="text-sm text-gray-500">
+                  <span>
                     🔒 Read-only - Cannot be modified
                   </span>
                   <Button asChild variant="ghost" size="sm">
@@ -161,7 +160,6 @@ export default function AcceptedOrdersPage() {
             ))}
           </div>
         )}
-      </Container>
-    </div>
+    </Container>
   );
 }

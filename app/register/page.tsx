@@ -68,13 +68,11 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen p-8 pb-20 sm:p-20 bg-background">
-      <Container>
+    <Container asPage>
         <div className="flex items-center justify-center">
           <div className="w-full">
+            <h1 className="mb-4">Register</h1>
             <Card>
-              <h1 className="text-3xl font-bold mb-6 text-center text-black">Register</h1>
-
               {error && (
                 <div className="mb-4 p-3 bg-destructive/15 border border-destructive text-destructive rounded-md">
                   {error}
@@ -110,7 +108,7 @@ export default function Register() {
                     required
                     placeholder="••••••••"
                   />
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs">
                     Must be at least 6 characters
                   </p>
                 </div>
@@ -137,8 +135,8 @@ export default function Register() {
                 </Button>
               </form>
 
-              <div className="mt-6 text-center text-sm">
-                <p className="text-gray-600">
+              <div className="mt-6 text-center">
+                <p>
                   Already have an account?{" "}
                   <Link
                     href="/login"
@@ -151,7 +149,6 @@ export default function Register() {
             </Card>
           </div>
         </div>
-      </Container>
-    </div>
+    </Container>
   );
 }

@@ -48,15 +48,15 @@ export default function Header() {
   const fullName = user?.user_metadata?.full_name;
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-[var(--shadow-menu)]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-[var(--shadow-menu)]">
+      <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20 py-2">
           {/* Logo */}
           <Link href="/" className="flex items-center">
             <img 
               src="/logo.svg" 
               alt="Transparenztool" 
-              className="h-15 w-auto"
+              className="max-md:w-20 w-24 h-auto"
             />
           </Link>
 
@@ -65,7 +65,7 @@ export default function Header() {
             {!loading && (
               <Link
                 href={user ? "/profile" : "/login"}
-                className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors text-black"
+                className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors text-black"
                 title={user ? (fullName || "Profile") : "Login"}
               >
                 <svg
@@ -88,7 +88,7 @@ export default function Header() {
             {/* Dropdown Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" aria-label="Menu">
+                <Button variant="ghost" aria-label="Menu" className="pr-0">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"
@@ -108,18 +108,13 @@ export default function Header() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem asChild>
-                  <Link href="/" className="cursor-pointer">
+                  <Link href="/" className="cursor-pointer no-underline">
                     Home
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/about" className="cursor-pointer">
-                    About
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/shop" className="cursor-pointer">
-                    Shop
+                  <Link href="/styleguide" className="cursor-pointer no-underline">
+                    Style Guide
                   </Link>
                 </DropdownMenuItem>
                 
@@ -131,31 +126,31 @@ export default function Header() {
                   <>
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{fullName || "User"}</p>
-                        <p className="text-xs leading-none text-muted-foreground">
+                        <p className="font-medium leading-none">{fullName || "User"}</p>
+                        <p className="text-xs leading-none">
                           {user.email}
                         </p>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href="/profile" className="cursor-pointer">
+                      <Link href="/profile" className="cursor-pointer no-underline">
                         Profile
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer no-underline">
                       Logout
                     </DropdownMenuItem>
                   </>
                 ) : (
                   <>
                     <DropdownMenuItem asChild>
-                      <Link href="/login" className="cursor-pointer">
+                      <Link href="/login" className="cursor-pointer no-underline">
                         Login
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/register" className="cursor-pointer font-medium">
+                      <Link href="/register" className="cursor-pointer no-underline">
                         Register
                       </Link>
                     </DropdownMenuItem>
