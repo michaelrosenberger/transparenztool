@@ -84,17 +84,17 @@ export default function AcceptedOrdersPage() {
   }
 
   return (
-    <Container asPage>
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="mb-4">Accepted Orders</h1>
-          <Button
-            onClick={() => router.push("/logistik")}
-            variant="ghost"
-            className="hover:text-foreground"
-          >
-            ← Back to Dashboard
-          </Button>
+    <>
+      <Container dark fullWidth>
+        <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+          <div>
+            <h1>Accepted Orders</h1>
+            <p>View all orders accepted for logistics processing</p>
+          </div>
         </div>
+      </Container>
+
+      <Container asPage>
 
         <p className="mb-6">
           View all orders that have been accepted for logistics processing (Read-only)
@@ -130,17 +130,17 @@ export default function AcceptedOrdersPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                   <div>
                     <p>Items</p>
-                    <p className="font-semibold text-black">{order.items.length}</p>
+                    <p className="font-medium text-black">{order.items.length}</p>
                   </div>
                   <div>
                     <p>Total Quantity</p>
-                    <p className="font-semibold text-black">
+                    <p className="font-medium text-black">
                       {getTotalQuantity(order.items)} kg
                     </p>
                   </div>
                   <div className="col-span-2">
                     <p>Vegetables</p>
-                    <p className="font-semibold text-black">
+                    <p className="font-medium text-black">
                       {order.items.map((item) => item.vegetable).join(", ")}
                     </p>
                   </div>
@@ -150,7 +150,7 @@ export default function AcceptedOrdersPage() {
                   <span>
                     🔒 Read-only - Cannot be modified
                   </span>
-                  <Button asChild variant="ghost" size="sm">
+                  <Button asChild size="sm">
                     <Link href={`/logistik/orders/${order.id}`}>
                       View Details →
                     </Link>
@@ -160,6 +160,7 @@ export default function AcceptedOrdersPage() {
             ))}
           </div>
         )}
-    </Container>
+      </Container>
+    </>
   );
 }

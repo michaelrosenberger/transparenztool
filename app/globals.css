@@ -45,7 +45,7 @@
 
 :root {
   --radius: 0.625rem;
-  --shadow-menu: 0 3px 6px #00000029;
+  --shadow-menu: rgba(0, 0, 0, 0.16) 0px 3px 6px 0px;
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);
@@ -58,7 +58,7 @@
   --secondary-foreground: oklch(0.208 0.042 265.755);
   --muted: oklch(0.968 0.007 247.896);
   --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
+  --accent: rgba(162, 162, 162, 0.2);
   --accent-foreground: oklch(0.208 0.042 265.755);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.929 0.013 255.508);
@@ -218,4 +218,19 @@
   font-weight: 500;
   font-stretch: 100%;
   font-display: swap;
+}
+
+/* Custom text selection color */
+::selection {
+  background-color: rgba(162, 162, 162, 0.3);
+  color: inherit;
+}
+
+::-moz-selection {
+  background-color: rgba(162, 162, 162, 0.3);
+  color: inherit;
+}
+
+.bg-black .leaflet-container {
+  background-color: #000;
 }

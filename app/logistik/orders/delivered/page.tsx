@@ -84,17 +84,17 @@ export default function DeliveredOrdersPage() {
   }
 
   return (
-    <Container asPage>
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="mb-4">Delivered Orders</h1>
-          <Button
-            onClick={() => router.push("/logistik")}
-            variant="ghost"
-            className="hover:text-foreground"
-          >
-            ← Back to Dashboard
-          </Button>
+    <>
+      <Container dark fullWidth>
+        <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+          <div>
+            <h1>Delivered Orders</h1>
+            <p>Review and accept delivered orders from farmers</p>
+          </div>
         </div>
+      </Container>
+
+      <Container asPage>
 
         <p className="mb-6">
           Review and accept delivered orders from farmers
@@ -130,24 +130,24 @@ export default function DeliveredOrdersPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                   <div>
                     <p>Items</p>
-                    <p className="font-semibold text-black">{order.items.length}</p>
+                    <p className="font-medium text-black">{order.items.length}</p>
                   </div>
                   <div>
                     <p>Total Quantity</p>
-                    <p className="font-semibold text-black">
+                    <p className="font-medium text-black">
                       {getTotalQuantity(order.items)} kg
                     </p>
                   </div>
                   <div className="col-span-2">
                     <p>Vegetables</p>
-                    <p className="font-semibold text-black">
+                    <p className="font-medium text-black">
                       {order.items.map((item) => item.vegetable).join(", ")}
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-gray-200">
-                  <Button asChild variant="ghost" size="sm">
+                  <Button asChild size="sm">
                     <Link href={`/logistik/orders/${order.id}`}>
                       Review & Accept →
                     </Link>
@@ -157,6 +157,7 @@ export default function DeliveredOrdersPage() {
             ))}
           </div>
         )}
-    </Container>
+      </Container>
+    </>
   );
 }

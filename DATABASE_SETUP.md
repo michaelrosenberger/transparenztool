@@ -46,22 +46,14 @@ create policy "Users can delete own orders"
 create policy "Logistics can view all orders"
   on orders for select
   using (
-    exists (
-      select 1 from auth.users
-      where auth.users.id = auth.uid()
-      and auth.users.raw_user_meta_data->>'occupation' = 'Logistik'
-    )
+    (auth.jwt()->>'user_metadata')::jsonb->>'occupation' = 'Logistik'
   );
 
 -- Policy: Logistics users can update order status to Accepted
 create policy "Logistics can accept orders"
   on orders for update
   using (
-    exists (
-      select 1 from auth.users
-      where auth.users.id = auth.uid()
-      and auth.users.raw_user_meta_data->>'occupation' = 'Logistik'
-    )
+    (auth.jwt()->>'user_metadata')::jsonb->>'occupation' = 'Logistik'
   )
   with check (
     status = 'Accepted' or status = 'Delivered'
@@ -112,22 +104,14 @@ alter table storage enable row level security;
 create policy "Logistics can view all storage"
   on storage for select
   using (
-    exists (
-      select 1 from auth.users
-      where auth.users.id = auth.uid()
-      and auth.users.raw_user_meta_data->>'occupation' = 'Logistik'
-    )
+    (auth.jwt()->>'user_metadata')::jsonb->>'occupation' = 'Logistik'
   );
 
 -- Policy: Logistics users can insert storage entries
 create policy "Logistics can insert storage"
   on storage for insert
   with check (
-    exists (
-      select 1 from auth.users
-      where auth.users.id = auth.uid()
-      and auth.users.raw_user_meta_data->>'occupation' = 'Logistik'
-    )
+    (auth.jwt()->>'user_metadata')::jsonb->>'occupation' = 'Logistik'
   );
 
 -- Policy: Farmers can view their own storage entries

@@ -152,11 +152,6 @@ export default function OrderDetailPage() {
         <Card>
           <div className="text-center py-8">
             <p className="mb-4">Order not found</p>
-            <Button
-              onClick={() => router.push("/farmer/orders")}
-            >
-              Back to Orders
-            </Button>
           </div>
         </Card>
       </div>
@@ -164,17 +159,17 @@ export default function OrderDetailPage() {
   }
 
   return (
-    <Container asPage>
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="mb-4">Order Details</h1>
-          <Button
-            onClick={() => router.push("/farmer/orders")}
-            variant="ghost"
-            className="hover:text-foreground"
-          >
-            ← Back to Orders
-          </Button>
+    <>
+      <Container dark fullWidth>
+        <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+          <div>
+            <h1>Order Details</h1>
+            <p>View and update your order status</p>
+          </div>
         </div>
+      </Container>
+
+      <Container asPage>
 
         <AlertDialog open={!!message} onOpenChange={() => setMessage(null)}>
           <AlertDialogContent>
@@ -195,9 +190,9 @@ export default function OrderDetailPage() {
         <Card className="mb-6">
           <div className="flex items-start justify-between mb-6">
             <div>
-              <h2 className="mb-2">
+              <h3 className="mb-2">
                 {order.order_number}
-              </h2>
+              </h3>
               <p>Farmer: {order.farmer_name}</p>
             </div>
             <Badge variant={getStatusVariant(order.status) as any}>
@@ -232,13 +227,13 @@ export default function OrderDetailPage() {
                 <TableRow key={index}>
                   <TableCell className="font-medium">{index + 1}</TableCell>
                   <TableCell className="text-black font-medium">{item.vegetable}</TableCell>
-                  <TableCell className="text-right text-black font-semibold">{item.quantity} kg</TableCell>
+                  <TableCell className="text-right text-black font-medium">{item.quantity} kg</TableCell>
                 </TableRow>
               ))}
             </TableBody>
             <TableFooter>
               <TableRow>
-                <TableCell colSpan={2} className="font-semibold">Total Items: {order.items.length}</TableCell>
+                <TableCell colSpan={2} className="font-medium">Total Items: {order.items.length}</TableCell>
                 <TableCell className="text-right font-bold">{getTotalQuantity()} kg</TableCell>
               </TableRow>
             </TableFooter>
@@ -282,6 +277,7 @@ export default function OrderDetailPage() {
             </Button>
           </div>
         </Card>
-    </Container>
+      </Container>
+    </>
   );
 }

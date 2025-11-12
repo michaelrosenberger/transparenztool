@@ -41,10 +41,19 @@ export default function Login() {
   };
 
   return (
-    <Container asPage>
+    <>
+      <Container dark fullWidth>
+        <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+          <div>
+            <h1>Login</h1>
+            <p>Sign in to access your dashboard</p>
+          </div>
+        </div>
+      </Container>
+
+      <Container asPage>
         <div className="flex items-center justify-center">
           <div className="w-full">
-            <h1 className="mb-4">Login</h1>
             <Card>
               {error && (
                 <div className="mb-4 p-3 bg-destructive/15 border border-destructive text-destructive rounded-md">
@@ -101,6 +110,7 @@ export default function Login() {
             </Card>
           </div>
         </div>
-    </Container>
+      </Container>
+    </>
   );
 }

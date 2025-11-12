@@ -12,17 +12,17 @@ export default function DemoQRPage() {
   const [mealId] = useState("meal-001");
 
   return (
-    <Container asPage>
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="mb-4">Demo QR Code</h1>
-          <Button
-            onClick={() => router.push("/enduser")}
-            variant="ghost"
-            className="hover:text-foreground"
-          >
-            ← Back to Dashboard
-          </Button>
+    <>
+      <Container dark fullWidth>
+        <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+          <div>
+            <h1>Demo QR Code</h1>
+            <p>Test the QR scanning functionality with this sample code</p>
+          </div>
         </div>
+      </Container>
+
+      <Container asPage>
 
         <Card>
           <h2 className="mb-4">Test QR Code</h2>
@@ -63,6 +63,7 @@ export default function DemoQRPage() {
             </p>
           </div>
         </Card>
-    </Container>
+      </Container>
+    </>
   );
 }

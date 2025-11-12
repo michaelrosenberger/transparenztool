@@ -7,6 +7,8 @@ import Card from "@/app/components/Card";
 import Container from "@/app/components/Container";
 import PageSkeleton from "@/app/components/PageSkeleton";
 import { Button } from "@/components/ui/button";
+import { StorageDataTable } from "./storage-data-table";
+import { columns } from "./storage-columns";
 
 interface StorageSummary {
   vegetable: string;
@@ -99,46 +101,30 @@ export default function LogistikPage() {
   const fullName = user?.user_metadata?.full_name || "Logistics Partner";
 
   return (
-    <Container asPage>
-        <h1 className="mb-4">
-          Welcome, {fullName}!
-        </h1>
-        <p className="text-xl mb-8">
-          Your Logistics Dashboard
-        </p>
+    <>
+      <Container dark fullWidth>
+        <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+          <div>
+            <h1>Welcome, {fullName}!</h1>
+            <p>Your Logistics Dashboard</p>
+          </div>
+        </div>
+      </Container>
+
+      <Container asPage>
 
         {/* Storage Inventory Summary */}
         {mounted && (
           <Card className="mb-6">
-            <h2 className="mb-4">Storage Inventory</h2>
-            {storageSummary.length === 0 ? (
-              <p className="text-center py-8">No items in storage yet</p>
-            ) : (
-              <div className="space-y-3">
-                {storageSummary.map((item) => (
-                  <div
-                    key={item.vegetable}
-                    className="flex items-center justify-between p-4 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                        <span className="text-xl">🥬</span>
-                      </div>
-                      <span className="font-medium text-black text-lg">{item.vegetable}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-bold text-black text-xl">{item.total_quantity}</span>
-                      <span className="ml-1">kg</span>
-                    </div>
-                  </div>
-                ))}
-                <div className="pt-4 border-t border-gray-200">
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold text-black text-lg">Total in Storage:</span>
-                    <span className="font-bold text-black text-xl">
-                      {storageSummary.reduce((sum, item) => sum + item.total_quantity, 0)} kg
-                    </span>
-                  </div>
+            <h3 className="mb-4">Storage Inventory</h3>
+            <StorageDataTable columns={columns} data={storageSummary} />
+            {storageSummary.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-black text-base">Total in Storage:</span>
+                  <span className="font-medium text-black text-xl">
+                    {storageSummary.reduce((sum, item) => sum + item.total_quantity, 0)} kg
+                  </span>
                 </div>
               </div>
             )}
@@ -175,5 +161,6 @@ export default function LogistikPage() {
         </div>
 
       </Container>
+    </>
   );
 }

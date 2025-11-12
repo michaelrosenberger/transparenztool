@@ -14,13 +14,17 @@ import {
 
 export default function StyleGuidePage() {
   return (
-    <Container asPage>
-      <div className="mb-8">
-        <h1 className="mb-4">Style Guide</h1>
-        <p className="text-xl">
-          A comprehensive overview of all typography, form elements, and button styles
-        </p>
-      </div>
+    <>
+      <Container dark fullWidth>
+        <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+          <div>
+            <h1>Style Guide</h1>
+            <p>A comprehensive overview of all typography, form elements, and button styles</p>
+          </div>
+        </div>
+      </Container>
+
+      <Container asPage>
 
       {/* Typography Section */}
       <Card className="mb-8">
@@ -405,6 +409,7 @@ export default function StyleGuidePage() {
           </div>
         </div>
       </Card>
-    </Container>
+      </Container>
+    </>
   );
 }

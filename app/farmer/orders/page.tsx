@@ -99,17 +99,14 @@ export default function OrdersListPage() {
   }
 
   return (
-    <Container asPage>
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="mb-4">My Orders</h1>
+    <>
+      <Container dark fullWidth>
+        <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+          <div>
+            <h1>My Orders</h1>
+            <p>Manage and track all your vegetable orders</p>
+          </div>
           <div className="flex gap-4">
-            <Button
-              onClick={() => router.push("/farmer")}
-              variant="ghost"
-              className="hover:text-foreground"
-            >
-              ← Back to Dashboard
-            </Button>
             <Button asChild variant="outline">
               <Link href="/farmer/orders/new">
                 + New Order
@@ -117,6 +114,9 @@ export default function OrdersListPage() {
             </Button>
           </div>
         </div>
+      </Container>
+
+      <Container asPage>
 
         {orders.length === 0 ? (
           <Card>
@@ -150,17 +150,17 @@ export default function OrdersListPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                   <div>
                     <p>Items</p>
-                    <p className="font-semibold text-black">{order.items.length}</p>
+                    <p className="font-medium text-black">{order.items.length}</p>
                   </div>
                   <div>
                     <p>Total Quantity</p>
-                    <p className="font-semibold text-black">
+                    <p className="font-medium text-black">
                       {getTotalQuantity(order.items)} kg
                     </p>
                   </div>
                   <div className="col-span-2">
                     <p>Vegetables</p>
-                    <p className="font-semibold text-black">
+                    <p className="font-medium text-black">
                       {order.items.map((item) => item.vegetable).join(", ")}
                     </p>
                   </div>
@@ -177,6 +177,7 @@ export default function OrdersListPage() {
             ))}
           </div>
         )}
-    </Container>
+      </Container>
+    </>
   );
 }

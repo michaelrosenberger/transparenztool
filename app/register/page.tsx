@@ -9,13 +9,23 @@ import Container from "@/app/components/Container";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+
+type Occupation = "Farmer" | "Logistik" | "Enduser";
 
 export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [occupation, setOccupation] = useState<Occupation | "">("");
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const supabase = createClient();
@@ -23,7 +33,6 @@ export default function Register() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setSuccess(false);
     setLoading(true);
 
     // Validate passwords match
@@ -40,18 +49,30 @@ export default function Register() {
       return;
     }
 
+    // Validate occupation
+    if (!occupation) {
+      setError("Please select an occupation");
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: {
+            occupation: occupation,
+          },
         },
       });
 
       if (error) throw error;
 
-      setSuccess(true);
+      toast.success("Registration successful!", {
+        description: "Check your email to confirm your account.",
+      });
       
       // If email confirmation is disabled, redirect to home
       if (data.user && !data.user.identities?.length) {
@@ -68,20 +89,23 @@ export default function Register() {
   };
 
   return (
-    <Container asPage>
+    <>
+      <Container dark fullWidth>
+        <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+          <div>
+            <h1>Register</h1>
+            <p>Create your account to get started</p>
+          </div>
+        </div>
+      </Container>
+
+      <Container asPage>
         <div className="flex items-center justify-center">
           <div className="w-full">
-            <h1 className="mb-4">Register</h1>
             <Card>
               {error && (
                 <div className="mb-4 p-3 bg-destructive/15 border border-destructive text-destructive rounded-md">
                   {error}
-                </div>
-              )}
-
-              {success && (
-                <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-md">
-                  Registration successful! Check your email to confirm your account.
                 </div>
               )}
 
@@ -96,6 +120,23 @@ export default function Register() {
                     required
                     placeholder="you@example.com"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="occupation">Occupation</Label>
+                  <Select
+                    value={occupation}
+                    onValueChange={(value) => setOccupation(value as Occupation)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select your occupation" />
+                    </SelectTrigger>
+                    <SelectContent className="w-full">
+                      <SelectItem value="Farmer">Farmer</SelectItem>
+                      <SelectItem value="Logistik">Logistik</SelectItem>
+                      <SelectItem value="Enduser">Enduser</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">
@@ -127,7 +168,7 @@ export default function Register() {
 
                 <Button
                   type="submit"
-                  disabled={loading || success}
+                  disabled={loading}
                   className="w-full"
                   size="lg"
                 >
@@ -149,6 +190,7 @@ export default function Register() {
             </Card>
           </div>
         </div>
-    </Container>
+      </Container>
+    </>
   );
 }

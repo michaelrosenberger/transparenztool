@@ -36,14 +36,10 @@ import {
 } from "@/components/ui/drawer";
 import { X, Minus, Plus } from "lucide-react";
 
-type Vegetable = "Tomatoes" | "Carrots" | "Potatoes" | "Salad";
-
 interface OrderItem {
-  vegetable: Vegetable;
+  vegetable: string;
   quantity: number;
 }
-
-const VEGETABLES: Vegetable[] = ["Tomatoes", "Carrots", "Potatoes", "Salad"];
 
 export default function NewOrderPage() {
   const [user, setUser] = useState<any>(null);
@@ -51,11 +47,12 @@ export default function NewOrderPage() {
   const [submitting, setSubmitting] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
   const [items, setItems] = useState<OrderItem[]>([]);
-  const [selectedVegetable, setSelectedVegetable] = useState<Vegetable>("Tomatoes");
+  const [availableVegetables, setAvailableVegetables] = useState<string[]>([]);
+  const [selectedVegetable, setSelectedVegetable] = useState<string>("");
   const [quantity, setQuantity] = useState<number>(1);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [drawerVegetable, setDrawerVegetable] = useState<Vegetable>("Tomatoes");
+  const [drawerVegetable, setDrawerVegetable] = useState<string>("");
   const [drawerQuantity, setDrawerQuantity] = useState<number>(1);
   
   const router = useRouter();
@@ -77,6 +74,17 @@ export default function NewOrderPage() {
       }
 
       setUser(user);
+      
+      // Load farmer's vegetables from profile
+      const vegetables = user.user_metadata?.vegetables || [];
+      setAvailableVegetables(vegetables);
+      
+      // Set default selected vegetable
+      if (vegetables.length > 0) {
+        setSelectedVegetable(vegetables[0]);
+        setDrawerVegetable(vegetables[0]);
+      }
+      
       generateOrderNumber();
       setLoading(false);
     };
@@ -127,7 +135,7 @@ export default function NewOrderPage() {
     setItems(newItems);
   };
 
-  const openDrawer = (vegetable: Vegetable) => {
+  const openDrawer = (vegetable: string) => {
     setDrawerVegetable(vegetable);
     setDrawerQuantity(1);
     setDrawerOpen(true);
@@ -206,17 +214,17 @@ export default function NewOrderPage() {
   }
 
   return (
-    <Container asPage>
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="mb-4">Create New Order</h1>
-          <Button
-            onClick={() => router.push("/farmer")}
-            variant="ghost"
-            className="hover:text-foreground"
-          >
-            ← Back to Dashboard
-          </Button>
+    <>
+      <Container dark fullWidth>
+        <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+          <div>
+            <h1>Create New Order</h1>
+            <p>Submit a new vegetable order for delivery</p>
+          </div>
         </div>
+      </Container>
+
+      <Container asPage>
 
         <AlertDialog open={!!message} onOpenChange={() => setMessage(null)}>
           <AlertDialogContent>
@@ -247,18 +255,29 @@ export default function NewOrderPage() {
         <Card className="mb-6">
           <h2 className="mb-4">Add Vegetables</h2>
           
+          {availableVegetables.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="mb-4">No vegetables configured in your profile.</p>
+              <Button
+                onClick={() => router.push("/profile")}
+                variant="outline"
+              >
+                Go to Profile Settings
+              </Button>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div className="space-y-2">
               <Label>Vegetable Field</Label>
               <Select
                 value={selectedVegetable}
-                onValueChange={(value) => setSelectedVegetable(value as Vegetable)}
+                onValueChange={(value) => setSelectedVegetable(value)}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {VEGETABLES.map((veg) => (
+                  {availableVegetables.map((veg) => (
                     <SelectItem key={veg} value={veg}>
                       {veg}
                     </SelectItem>
@@ -294,13 +313,15 @@ export default function NewOrderPage() {
               </Button>
             </div>
           </div>
+          )}
         </Card>
 
+        {availableVegetables.length > 0 && (
         <Card className="mb-6">
           <h2 className="mb-4">Quick Add Vegetables</h2>
           <p className="mb-4">Click on a vegetable to set quantity</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {VEGETABLES.map((veg) => (
+            {availableVegetables.map((veg) => (
               <Button
                 key={veg}
                 onClick={() => openDrawer(veg)}
@@ -312,6 +333,7 @@ export default function NewOrderPage() {
             ))}
           </div>
         </Card>
+        )}
 
         <Card className="mb-6">
           <h2 className="mb-4">Order Items</h2>
@@ -352,11 +374,11 @@ export default function NewOrderPage() {
               
               <div className="pt-4 border-t border-gray-200">
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold text-black">Total Items:</span>
+                  <span className="font-medium text-black">Total Items:</span>
                   <span className="font-bold text-black">{items.length}</span>
                 </div>
                 <div className="flex justify-between items-center mt-2">
-                  <span className="font-semibold text-black">Total Quantity:</span>
+                  <span className="font-medium text-black">Total Quantity:</span>
                   <span className="font-bold text-black">
                     {items.reduce((sum, item) => sum + item.quantity, 0)} kg
                   </span>
@@ -433,6 +455,7 @@ export default function NewOrderPage() {
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
-    </Container>
+      </Container>
+    </>
   );
 }

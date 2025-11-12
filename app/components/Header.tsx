@@ -117,6 +117,11 @@ export default function Header() {
                     Style Guide
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/farmer-list" className="cursor-pointer no-underline">
+                    Die Produzenten
+                  </Link>
+                </DropdownMenuItem>
                 
                 <DropdownMenuSeparator />
                 

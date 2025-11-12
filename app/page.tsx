@@ -44,13 +44,17 @@ export default function Home() {
   }
 
   return (
-    <Container asPage>
-      <h1 className="mb-4">
-        Welcome to Transparenztool
-      </h1>
-        <p className="text-xl mb-8">
-          Your platform for supply chain transparency
-        </p>
+    <>
+      <Container dark fullWidth>
+        <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+          <div>
+            <h1>Welcome to Transparenztool</h1>
+            <p>Your platform for supply chain transparency</p>
+          </div>
+        </div>
+      </Container>
+
+      <Container asPage>
 
         <Card className="mb-6">
           <h2 className="mb-4">Get Started</h2>
@@ -74,29 +78,7 @@ export default function Home() {
             </Button>
           </div>
         </Card>
-
-        <div className="grid gap-6 md:grid-cols-3">
-          <Card title="For Farmers">
-            <p>
-              Manage crops, track shipments, and maintain quality standards with 
-              complete transparency.
-            </p>
-          </Card>
-
-          <Card title="For Logistics">
-            <p>
-              Optimize routes, manage warehouses, and track deliveries in real-time 
-              across your network.
-            </p>
-          </Card>
-
-          <Card title="For Consumers">
-            <p>
-              Scan products to see their journey, support sustainable farming, and 
-              make informed choices.
-            </p>
-          </Card>
-        </div>
-    </Container>
+      </Container>
+    </>
   );
 }

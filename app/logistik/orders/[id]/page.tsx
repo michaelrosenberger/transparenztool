@@ -16,6 +16,8 @@ import {
   AlertDialogTitle,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import { OrderItemsDataTable } from "../order-items-data-table";
+import { columns } from "../order-items-columns";
 
 interface Order {
   id: string;
@@ -160,11 +162,6 @@ export default function LogistikOrderDetailPage() {
         <Card>
           <div className="text-center py-8">
             <p className="mb-4">Order not found</p>
-            <Button
-              onClick={() => router.push("/logistik/orders/delivered")}
-            >
-              Back to Delivered Orders
-            </Button>
           </div>
         </Card>
       </div>
@@ -174,9 +171,13 @@ export default function LogistikOrderDetailPage() {
   const isDelivered = order.status === "Delivered";
 
   return (
-    <Container asPage>
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="mb-4">Order Details</h1>
+    <>
+      <Container dark fullWidth>
+        <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+          <div>
+            <h1>Order Details</h1>
+            <p>Review order information and accept for processing</p>
+          </div>
           <Button
             onClick={() => router.push(isDelivered ? "/logistik/orders/delivered" : "/logistik/orders/accepted")}
             variant="ghost"
@@ -185,6 +186,9 @@ export default function LogistikOrderDetailPage() {
             ← Back
           </Button>
         </div>
+      </Container>
+
+      <Container asPage>
 
         <AlertDialog open={!!message} onOpenChange={() => setMessage(null)}>
           <AlertDialogContent>
@@ -205,9 +209,9 @@ export default function LogistikOrderDetailPage() {
         <Card className="mb-6">
           <div className="flex items-start justify-between mb-6">
             <div>
-              <h2 className="mb-2">
+              <h3 className="mb-2">
                 {order.order_number}
-              </h2>
+              </h3>
               <p className="text-lg">Farmer: {order.farmer_name}</p>
             </div>
             <Badge variant={getStatusVariant(order.status) as any}>
@@ -229,30 +233,13 @@ export default function LogistikOrderDetailPage() {
 
         <Card className="mb-6">
           <h3 className="mb-4">Order Items</h3>
-          <div className="space-y-3">
-            {order.items.map((item, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-4 border border-gray-200 rounded-md"
-              >
-                <span className="font-medium text-black text-lg">{item.vegetable}</span>
-                <span className="font-semibold text-black">
-                  {item.quantity} kg
-                </span>
-              </div>
-            ))}
-            
-            <div className="pt-4 border-t border-gray-200">
-              <div className="flex justify-between items-center">
-                <span className="font-semibold text-black text-lg">Total Items:</span>
-                <span className="font-bold text-black text-lg">{order.items.length}</span>
-              </div>
-              <div className="flex justify-between items-center mt-2">
-                <span className="font-semibold text-black text-lg">Total Quantity:</span>
-                <span className="font-bold text-black text-lg">
-                  {getTotalQuantity()} kg
-                </span>
-              </div>
+          <OrderItemsDataTable columns={columns} data={order.items} />
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="flex justify-between items-center mt-2">
+              <span className="font-medium text-black text-base">Total Quantity:</span>
+              <span className="font-medium text-black text-xl">
+                {getTotalQuantity()} kg
+              </span>
             </div>
           </div>
         </Card>
@@ -274,16 +261,7 @@ export default function LogistikOrderDetailPage() {
             </Button>
           </Card>
         )}
-
-        {order.status === "Accepted" && (
-          <Card>
-            <div className="text-center py-4">
-              <p className="text-green-700 font-medium">
-                ✓ This order has been accepted and cannot be modified
-              </p>
-            </div>
-          </Card>
-        )}
-    </Container>
+      </Container>
+    </>
   );
 }
