@@ -174,7 +174,7 @@ export default function NewOrderPage() {
 
   const handleSubmit = async () => {
     if (items.length === 0) {
-      setMessage({ type: "error", text: "Please add at least one item to the order" });
+      setMessage({ type: "error", text: "Bitte fügen Sie mindestens einen Artikel zur Bestellung hinzu" });
       return;
     }
 
@@ -196,14 +196,14 @@ export default function NewOrderPage() {
 
       if (error) throw error;
 
-      setMessage({ type: "success", text: "Order created successfully!" });
+      setMessage({ type: "success", text: "Bestellung erfolgreich erstellt!" });
       
       // Redirect to orders list after 2 seconds
       setTimeout(() => {
         router.push("/farmer/orders");
       }, 2000);
     } catch (error: any) {
-      setMessage({ type: "error", text: error.message || "Failed to create order" });
+      setMessage({ type: "error", text: error.message || "Bestellung konnte nicht erstellt werden" });
     } finally {
       setSubmitting(false);
     }
@@ -218,8 +218,8 @@ export default function NewOrderPage() {
       <Container dark fullWidth>
         <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div>
-            <h1>Create New Order</h1>
-            <p>Submit a new vegetable order for delivery</p>
+            <h1>Neue Bestellung erstellen</h1>
+            <p>Neue Gemüsebestellung zur Lieferung einreichen</p>
           </div>
         </div>
       </Container>
@@ -230,7 +230,7 @@ export default function NewOrderPage() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {message?.type === "success" ? "Success" : "Error"}
+                {message?.type === "success" ? "Erfolg" : "Fehler"}
               </AlertDialogTitle>
               <AlertDialogDescription>
                 {message?.text}
@@ -244,31 +244,28 @@ export default function NewOrderPage() {
 
         <Card className="mb-6">
           <div className="mb-4">
-            <h2 className="mb-2">Order Details</h2>
-            <div className="flex items-center gap-2">
-              <span>Order Number:</span>
-              <span className="font-mono font-bold text-black">{orderNumber}</span>
-            </div>
+            <h3 className="mb-2">{orderNumber}</h3>
+            <p>Landwirt: {user?.user_metadata?.full_name || "Unbekannt"}</p>
           </div>
         </Card>
 
         <Card className="mb-6">
-          <h2 className="mb-4">Add Vegetables</h2>
+          <h3 className="mb-4">Gemüse hinzufügen</h3>
           
           {availableVegetables.length === 0 ? (
             <div className="text-center py-8">
-              <p className="mb-4">No vegetables configured in your profile.</p>
+              <p className="mb-4">Keine Gemüsesorten in Ihrem Profil konfiguriert.</p>
               <Button
                 onClick={() => router.push("/profile")}
                 variant="outline"
               >
-                Go to Profile Settings
+                Zu den Profileinstellungen
               </Button>
             </div>
           ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
             <div className="space-y-2">
-              <Label>Vegetable Field</Label>
+              <Label>Gemüsefeld</Label>
               <Select
                 value={selectedVegetable}
                 onValueChange={(value) => setSelectedVegetable(value)}
@@ -288,7 +285,7 @@ export default function NewOrderPage() {
 
             <div className="space-y-2">
               <Label>
-                Quantity: <span className="font-bold">{quantity} kg</span>
+                Menge: <span className="font-medium">{quantity} kg</span>
               </Label>
               <Slider
                 value={[quantity]}
@@ -296,7 +293,7 @@ export default function NewOrderPage() {
                 min={1}
                 max={500}
                 step={5}
-                className="w-full"
+                className="w-full mt-6"
               />
               <div className="flex justify-between text-xs">
                 <span>1 kg</span>
@@ -304,12 +301,12 @@ export default function NewOrderPage() {
               </div>
             </div>
 
-            <div className="flex items-end">
+            <div className="flex items-center">
               <Button
                 onClick={addItem}
                 className="w-full"
               >
-                Add to Order
+                Zur Bestellung hinzufügen
               </Button>
             </div>
           </div>
@@ -318,8 +315,7 @@ export default function NewOrderPage() {
 
         {availableVegetables.length > 0 && (
         <Card className="mb-6">
-          <h2 className="mb-4">Quick Add Vegetables</h2>
-          <p className="mb-4">Click on a vegetable to set quantity</p>
+          <h3 className="mb-4">Gemüse schnell hinzufügen</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {availableVegetables.map((veg) => (
               <Button
@@ -336,11 +332,11 @@ export default function NewOrderPage() {
         )}
 
         <Card className="mb-6">
-          <h2 className="mb-4">Order Items</h2>
+          <h3 className="mb-4">Bestellartikel</h3>
           
           {items.length === 0 ? (
             <p className="text-center py-8">
-              No items added yet. Add vegetables to your order above.
+              Noch keine Artikel hinzugefügt. Fügen Sie oben Gemüse zu Ihrer Bestellung hinzu.
             </p>
           ) : (
             <div className="space-y-3">
@@ -374,12 +370,12 @@ export default function NewOrderPage() {
               
               <div className="pt-4 border-t border-gray-200">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium text-black">Total Items:</span>
-                  <span className="font-bold text-black">{items.length}</span>
+                  <span className="font-medium text-black">Artikel gesamt:</span>
+                  <span className="font-medium text-black">{items.length}</span>
                 </div>
                 <div className="flex justify-between items-center mt-2">
-                  <span className="font-medium text-black">Total Quantity:</span>
-                  <span className="font-bold text-black">
+                  <span className="font-medium text-black">Gesamtmenge:</span>
+                  <span className="font-medium text-black">
                     {items.reduce((sum, item) => sum + item.quantity, 0)} kg
                   </span>
                 </div>
@@ -390,20 +386,20 @@ export default function NewOrderPage() {
 
         <div className="flex gap-4">
           <Button
-            onClick={() => router.push("/farmer")}
-            variant="outline"
-            size="lg"
-            className="flex-1"
-          >
-            Cancel
-          </Button>
-          <Button
             onClick={handleSubmit}
             disabled={items.length === 0 || submitting}
             size="lg"
             className="flex-1"
           >
-            {submitting ? "Creating Order..." : "Create Order"}
+            {submitting ? "Bestellung wird erstellt..." : "Bestellung erstellen"}
+          </Button>
+          <Button
+            onClick={() => router.push("/farmer")}
+            variant="outline"
+            size="lg"
+            className="flex-1"
+          >
+            Abbrechen
           </Button>
         </div>
 
@@ -411,7 +407,7 @@ export default function NewOrderPage() {
           <DrawerContent>
             <DrawerHeader className="text-center">
               <DrawerTitle className="text-2xl font-bold">{drawerVegetable}</DrawerTitle>
-              <DrawerDescription>Set your quantity.</DrawerDescription>
+              <DrawerDescription>Legen Sie Ihre Menge fest.</DrawerDescription>
             </DrawerHeader>
             
             <div className="flex flex-col items-center justify-center p-8 space-y-8">
@@ -444,11 +440,11 @@ export default function NewOrderPage() {
             <DrawerFooter>
               <div className="flex gap-4 w-full">
                 <Button onClick={handleDrawerSubmit} size="lg" className="flex-1">
-                  Submit
+                  Bestätigen
                 </Button>
                 <DrawerClose asChild>
                   <Button variant="outline" size="lg" className="flex-1">
-                    Cancel
+                    Abbrechen
                   </Button>
                 </DrawerClose>
               </div>

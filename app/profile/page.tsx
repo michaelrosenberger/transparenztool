@@ -37,16 +37,16 @@ import {
 type Occupation = "Farmer" | "Logistik" | "Enduser";
 
 const VEGETABLES = [
-  "Tomatoes",
-  "Carrots",
-  "Potatoes",
-  "Salad",
-  "Cucumbers",
-  "Peppers",
-  "Onions",
-  "Cabbage",
-  "Broccoli",
-  "Cauliflower",
+  "Tomaten",
+  "Karotten",
+  "Kartoffeln",
+  "Salat",
+  "Gurken",
+  "Paprika",
+  "Zwiebeln",
+  "Kohl",
+  "Brokkoli",
+  "Blumenkohl",
 ];
 
 export default function Profile() {
@@ -153,7 +153,7 @@ export default function Profile() {
         if (!coordinates) {
           setMessage({ 
             type: "error", 
-            text: "Could not validate the address. Please check that the street, zip code, and city are correct." 
+            text: "Die Adresse konnte nicht validiert werden. Bitte überprüfen Sie, ob Straße, Postleitzahl und Stadt korrekt sind." 
           });
           setSaving(false);
           return;
@@ -176,7 +176,7 @@ export default function Profile() {
 
       if (error) throw error;
 
-      setMessage({ type: "success", text: "Profile updated successfully!" });
+      setMessage({ type: "success", text: "Profil erfolgreich aktualisiert!" });
     } catch (error: any) {
       setMessage({ type: "error", text: error.message });
     } finally {
@@ -190,13 +190,19 @@ export default function Profile() {
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      setMessage({ type: "error", text: "Please select an image file" });
+      setMessage({ type: "error", text: "Bitte wählen Sie eine Bilddatei aus" });
+      return;
+    }
+
+    // Disallow GIF files
+    if (file.type === "image/gif") {
+      setMessage({ type: "error", text: "GIF-Dateien sind nicht erlaubt" });
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      setMessage({ type: "error", text: "Image size must be less than 5MB" });
+      setMessage({ type: "error", text: "Bildgröße muss kleiner als 5MB sein" });
       return;
     }
 
@@ -222,9 +228,9 @@ export default function Profile() {
         .getPublicUrl(filePath);
 
       setProfileImage(publicUrl);
-      setMessage({ type: "success", text: "Image uploaded successfully! Don't forget to save your profile." });
+      setMessage({ type: "success", text: "Bild erfolgreich hochgeladen! Vergessen Sie nicht, Ihr Profil zu speichern." });
     } catch (error: any) {
-      setMessage({ type: "error", text: error.message || "Failed to upload image" });
+      setMessage({ type: "error", text: error.message || "Bild konnte nicht hochgeladen werden" });
     } finally {
       setUploadingImage(false);
     }
@@ -237,13 +243,13 @@ export default function Profile() {
 
     // Validate passwords
     if (newPassword.length < 6) {
-      setMessage({ type: "error", text: "Password must be at least 6 characters" });
+      setMessage({ type: "error", text: "Passwort muss mindestens 6 Zeichen lang sein" });
       setSaving(false);
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setMessage({ type: "error", text: "Passwords do not match" });
+      setMessage({ type: "error", text: "Passwörter stimmen nicht überein" });
       setSaving(false);
       return;
     }
@@ -255,7 +261,7 @@ export default function Profile() {
 
       if (error) throw error;
 
-      setMessage({ type: "success", text: "Password changed successfully!" });
+      setMessage({ type: "success", text: "Passwort erfolgreich geändert!" });
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -275,7 +281,7 @@ export default function Profile() {
       <Container dark fullWidth>
         <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div>
-            <h1>Profile Settings</h1>
+            <h1>Profil</h1>
             <p>{user?.email}</p>
           </div>
         </div>
@@ -287,7 +293,7 @@ export default function Profile() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {message?.type === "success" ? "Success" : "Error"}
+                {message?.type === "success" ? "Erfolg" : "Fehler"}
               </AlertDialogTitle>
               <AlertDialogDescription>
                 {message?.text}
@@ -300,24 +306,24 @@ export default function Profile() {
         </AlertDialog>
 
         {/* Profile Information */}
-        <Card title="Profile Information" className="mb-6">
+        <Card title="Profilinformationen" className="mb-6">
           <form onSubmit={handleSaveProfile} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
+              <Label htmlFor="fullName">Vollständiger Name</Label>
               <Input
                 id="fullName"
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="Enter your full name"
+                placeholder="Geben Sie Ihren vollständigen Namen ein"
               />
             </div>
 
             {/* Profile Image Upload - Only for Farmers */}
             {occupation === "Farmer" && (
               <div className="space-y-2">
-                <Label>Profile Image</Label>
-                <div className="flex items-center gap-4">
+                <Label>Profilbild</Label>
+                <div className="flex items-center gap-4 flex-wrap">
                   <Avatar className="h-20 w-20">
                     <AvatarImage src={profileImage} alt={fullName || "Profile"} />
                     <AvatarFallback>
@@ -332,16 +338,18 @@ export default function Profile() {
                       onChange={handleImageUpload}
                       className="hidden"
                     />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploadingImage}
-                    >
-                      {uploadingImage ? "Uploading..." : "Upload Image"}
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploadingImage}
+                      >
+                        {uploadingImage ? "Wird hochgeladen..." : "Bild hochladen"}
+                      </Button>
+                    </div>
                     <p className="text-xs text-muted-foreground mt-2">
-                      Max 5MB. Supported formats: JPG, PNG, GIF
+                      Max 5MB. Unterstützte Formate: JPG, PNG
                     </p>
                   </div>
                 </div>
@@ -349,22 +357,22 @@ export default function Profile() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="occupation">Occupation</Label>
+              <Label htmlFor="occupation">Tätigkeit</Label>
               <Select
                 value={occupation}
                 onValueChange={(value) => setOccupation(value as Occupation)}
               >
                 <SelectTrigger                 
-                  className="w-full"
+                  className="w-full text-left"
                 >
-                  <SelectValue placeholder="Select your occupation" />
+                  <SelectValue placeholder="Tätigkeit" />
                 </SelectTrigger>
                 <SelectContent
                   className="w-full"
                 >
-                  <SelectItem value="Farmer">Farmer</SelectItem>
+                  <SelectItem value="Farmer">Landwirt</SelectItem>
                   <SelectItem value="Logistik">Logistik</SelectItem>
-                  <SelectItem value="Enduser">Enduser</SelectItem>
+                  <SelectItem value="Enduser">Endverbraucher</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -373,55 +381,55 @@ export default function Profile() {
             {occupation !== "Enduser" && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="street">Street (Optional)</Label>
+                  <Label htmlFor="street">Straße (Optional)</Label>
                   <Input
                     id="street"
                     type="text"
                     value={street}
                     onChange={(e) => setStreet(e.target.value)}
-                    placeholder="Enter your street address"
+                    placeholder="Geben Sie Ihre Straßenadresse ein"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="zipCode">Zip Code (Optional)</Label>
+                    <Label htmlFor="zipCode">Postleitzahl (Optional)</Label>
                     <Input
                       id="zipCode"
                       type="text"
                       value={zipCode}
                       onChange={(e) => setZipCode(e.target.value)}
-                      placeholder="Enter zip code"
+                      placeholder="Postleitzahl eingeben"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="city">City (Optional)</Label>
+                    <Label htmlFor="city">Stadt (Optional)</Label>
                     <Input
                       id="city"
                       type="text"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      placeholder="Enter city"
+                      placeholder="Stadt eingeben"
                     />
                   </div>
                 </div>
 
                 {/* Address Validation Status */}
                 {street && zipCode && city && (
-                  <div className="p-3 rounded-md bg-gray-50 border border-gray-200">
+                  <div className="p-3 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800">
                     {addressCoordinates ? (
                       <div className="flex items-center gap-2 text-green-700">
                         <span>✓</span>
                         <span className="text-sm">
-                          Address validated
+                          Adresse validiert
                         </span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2 text-amber-700">
                         <span>⚠</span>
                         <span className="text-sm">
-                          Address will be validated when you save your profile
+                          Adresse wird beim Speichern Ihres Profils validiert
                         </span>
                       </div>
                     )}
@@ -433,13 +441,13 @@ export default function Profile() {
             {/* Vegetables Multi-Select - Only for Farmers */}
             {occupation === "Farmer" && (
               <div className="space-y-2">
-                <Label>Available Vegetables (Optional)</Label>
+                <Label>Verfügbares Gemüse (Optional)</Label>
                 <MultiSelect
                   values={vegetables}
                   onValuesChange={setVegetables}
                 >
-                  <MultiSelectTrigger className="w-full">
-                    <MultiSelectValue placeholder="Select vegetables you grow..." />
+                  <MultiSelectTrigger className="w-full min-h-[50px]">
+                    <MultiSelectValue placeholder="Wählen Sie Gemüse aus, das Sie anbauen..." />
                   </MultiSelectTrigger>
                   <MultiSelectContent>
                     <MultiSelectGroup>
@@ -460,36 +468,36 @@ export default function Profile() {
               size="lg"
               className="w-full"
             >
-              {saving ? "Saving..." : "Save Changes"}
+              {saving ? "Wird gespeichert..." : "Änderungen speichern"}
             </Button>
           </form>
         </Card>
 
         {/* Change Password */}
-        <Card title="Change Password">
+        <Card title="Passwort ändern">
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="newPassword">New Password</Label>
+              <Label htmlFor="newPassword">Neues Passwort</Label>
               <Input
                 id="newPassword"
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password"
+                placeholder="Neues Passwort eingeben"
               />
               <p className="text-xs">
-                Must be at least 6 characters
+                Muss mindestens 6 Zeichen lang sein
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <Label htmlFor="confirmPassword">Neues Passwort bestätigen</Label>
               <Input
                 id="confirmPassword"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm new password"
+                placeholder="Neues Passwort bestätigen"
               />
             </div>
 
@@ -499,7 +507,7 @@ export default function Profile() {
               size="lg"
               className="w-full"
             >
-              {saving ? "Changing..." : "Change Password"}
+              {saving ? "Wird geändert..." : "Passwort ändern"}
             </Button>
           </form>
         </Card>

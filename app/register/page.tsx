@@ -37,21 +37,21 @@ export default function Register() {
 
     // Validate passwords match
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError("Passwörter stimmen nicht überein");
       setLoading(false);
       return;
     }
 
     // Validate password length
     if (password.length < 6) {
-      setError("Password must be at least 6 characters long");
+      setError("Passwort muss mindestens 6 Zeichen lang sein");
       setLoading(false);
       return;
     }
 
     // Validate occupation
     if (!occupation) {
-      setError("Please select an occupation");
+      setError("Bitte wählen Sie eine Tätigkeit aus");
       setLoading(false);
       return;
     }
@@ -70,19 +70,11 @@ export default function Register() {
 
       if (error) throw error;
 
-      toast.success("Registration successful!", {
-        description: "Check your email to confirm your account.",
-      });
-      
-      // If email confirmation is disabled, redirect to home
-      if (data.user && !data.user.identities?.length) {
-        setTimeout(() => {
-          router.push("/");
-          router.refresh();
-        }, 2000);
-      }
+      // Redirect to home and show success message
+      router.push("/?registered=true");
+      router.refresh();
     } catch (error: any) {
-      setError(error.message || "An error occurred during registration");
+      setError(error.message || "Ein Fehler ist bei der Registrierung aufgetreten");
     } finally {
       setLoading(false);
     }
@@ -93,8 +85,8 @@ export default function Register() {
       <Container dark fullWidth>
         <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div>
-            <h1>Register</h1>
-            <p>Create your account to get started</p>
+            <h1>Registrieren</h1>
+            <p>Erstellen Sie Ihr Konto, um loszulegen</p>
           </div>
         </div>
       </Container>
@@ -111,36 +103,36 @@ export default function Register() {
 
               <form onSubmit={handleRegister} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">E-Mail</Label>
                   <Input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    placeholder="you@example.com"
+                    placeholder="ihre@email.de"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="occupation">Occupation</Label>
+                  <Label htmlFor="occupation">Tätigkeit</Label>
                   <Select
                     value={occupation}
                     onValueChange={(value) => setOccupation(value as Occupation)}
                   >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select your occupation" />
+                    <SelectTrigger className="w-full text-left">
+                      <SelectValue placeholder="Tätigkeit" />
                     </SelectTrigger>
                     <SelectContent className="w-full">
-                      <SelectItem value="Farmer">Farmer</SelectItem>
+                      <SelectItem value="Farmer">Landwirt</SelectItem>
                       <SelectItem value="Logistik">Logistik</SelectItem>
-                      <SelectItem value="Enduser">Enduser</SelectItem>
+                      <SelectItem value="Enduser">Endverbraucher</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">Passwort</Label>
                   <Input
                     id="password"
                     type="password"
@@ -150,12 +142,12 @@ export default function Register() {
                     placeholder="••••••••"
                   />
                   <p className="text-xs">
-                    Must be at least 6 characters
+                    Muss mindestens 6 Zeichen lang sein
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Label htmlFor="confirmPassword">Passwort bestätigen</Label>
                   <Input
                     id="confirmPassword"
                     type="password"
@@ -172,18 +164,18 @@ export default function Register() {
                   className="w-full"
                   size="lg"
                 >
-                  {loading ? "Creating account..." : "Register"}
+                  {loading ? "Konto wird erstellt..." : "Registrieren"}
                 </Button>
               </form>
 
               <div className="mt-6 text-center">
                 <p>
-                  Already have an account?{" "}
+                  Bereits ein Konto?{" "}
                   <Link
                     href="/login"
                     className="font-medium hover:underline"
                   >
-                    Login here
+                    Hier anmelden
                   </Link>
                 </p>
               </div>

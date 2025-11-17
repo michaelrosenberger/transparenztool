@@ -7,20 +7,20 @@ export default function NotFound() {
     <Container asPage>
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
         <h1 className="text-6xl font-bold mb-4">404</h1>
-        <h2 className="text-2xl font-medium mb-4">Page Not Found</h2>
+        <h2 className="text-2xl font-medium mb-4">Seite nicht gefunden</h2>
         <p className="text-lg mb-8 max-w-md">
-          Sorry, we couldn't find the page you're looking for. 
-          The page might have been moved or deleted.
+          Entschuldigung, wir konnten die gesuchte Seite nicht finden. 
+          Die Seite wurde möglicherweise verschoben oder gelöscht.
         </p>
-        <div className="flex gap-4">
-          <Button asChild size="lg">
+        <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+          <Button asChild size="lg" className="sm:w-auto w-full">
             <Link href="/">
-              Go Home
+              Zur Startseite
             </Link>
           </Button>
-          <Button asChild variant="outline" size="lg">
+          <Button asChild variant="outline" size="lg" className="sm:w-auto w-full">
             <Link href="/login">
-              Login
+              Anmelden
             </Link>
           </Button>
         </div>

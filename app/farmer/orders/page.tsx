@@ -9,6 +9,14 @@ import PageSkeleton from "@/app/components/PageSkeleton";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface Order {
   id: string;
@@ -79,9 +87,24 @@ export default function OrdersListPage() {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "Announced":
+        return "Angekündigt";
+      case "Delivered":
+        return "Geliefert";
+      case "Accepted":
+        return "Akzeptiert";
+      case "Stored":
+        return "Gelagert";
+      default:
+        return status;
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString("de-DE", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -103,15 +126,8 @@ export default function OrdersListPage() {
       <Container dark fullWidth>
         <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div>
-            <h1>My Orders</h1>
-            <p>Manage and track all your vegetable orders</p>
-          </div>
-          <div className="flex gap-4">
-            <Button asChild variant="outline">
-              <Link href="/farmer/orders/new">
-                + New Order
-              </Link>
-            </Button>
+            <h1>Meine Bestellungen</h1>
+            <p>Verwalten und verfolgen Sie alle Ihre Gemüsebestellungen</p>
           </div>
         </div>
       </Container>
@@ -121,61 +137,62 @@ export default function OrdersListPage() {
         {orders.length === 0 ? (
           <Card>
             <div className="text-center py-12">
-              <p className="mb-4">No orders yet</p>
+              <p className="mb-4">Noch keine Bestellungen</p>
               <Button asChild size="lg">
                 <Link href="/farmer/orders/new">
-                  Create Your First Order
+                  Erste Bestellung erstellen
                 </Link>
               </Button>
             </div>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {orders.map((order) => (
-              <Card key={order.id}>
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="mb-1">
-                      {order.order_number}
-                    </h3>
-                    <p>
-                      Created: {formatDate(order.created_at)}
-                    </p>
-                  </div>
-                  <Badge variant={getStatusVariant(order.status) as any}>
-                    {order.status}
-                  </Badge>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                  <div>
-                    <p>Items</p>
-                    <p className="font-medium text-black">{order.items.length}</p>
-                  </div>
-                  <div>
-                    <p>Total Quantity</p>
-                    <p className="font-medium text-black">
-                      {getTotalQuantity(order.items)} kg
-                    </p>
-                  </div>
-                  <div className="col-span-2">
-                    <p>Vegetables</p>
-                    <p className="font-medium text-black">
-                      {order.items.map((item) => item.vegetable).join(", ")}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <Button asChild variant="ghost" size="sm">
-                    <Link href={`/farmer/orders/${order.id}`}>
-                      View Details →
-                    </Link>
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
+          <Card>
+            <h3 className="mb-4">Bestellungen</h3>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Bestellnummer</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Artikel</TableHead>
+                    <TableHead>Gesamtmenge</TableHead>
+                    <TableHead className="hidden md:table-cell">Gemüse</TableHead>
+                    <TableHead>Erstellt</TableHead>
+                    <TableHead className="text-right">Aktionen</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {orders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-medium">
+                        {order.order_number}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusVariant(order.status) as any}>
+                          {getStatusLabel(order.status)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{order.items.length}</TableCell>
+                      <TableCell>{getTotalQuantity(order.items)} kg</TableCell>
+                      <TableCell className="hidden md:table-cell max-w-xs truncate">
+                        {order.items.map((item) => item.vegetable).join(", ")}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {formatDate(order.created_at)}
+                      </TableCell>
+                      <TableCell className="text-right pr-0">
+                        <Button asChild variant="ghost" size="sm">
+                          <Link href={`/farmer/orders/${order.id}`}>
+                            Details →
+                          </Link>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
         )}
       </Container>
     </>

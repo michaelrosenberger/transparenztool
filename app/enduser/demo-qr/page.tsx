@@ -16,8 +16,8 @@ export default function DemoQRPage() {
       <Container dark fullWidth>
         <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div>
-            <h1>Demo QR Code</h1>
-            <p>Test the QR scanning functionality with this sample code</p>
+            <h1>Demo QR-Code</h1>
+            <p>Testen Sie die QR-Scanfunktion mit diesem Beispielcode</p>
           </div>
         </div>
       </Container>
@@ -25,13 +25,13 @@ export default function DemoQRPage() {
       <Container asPage>
 
         <Card>
-          <h2 className="mb-4">Test QR Code</h2>
+          <h2 className="mb-4">Test QR-Code</h2>
           <p className="mb-6">
-            Use this QR code to test the scanning functionality. Scan it with the QR scanner to view meal details.
+            Verwenden Sie diesen QR-Code, um die Scanfunktion zu testen. Scannen Sie ihn mit dem QR-Scanner, um Mahlzeitdetails anzuzeigen.
           </p>
 
           <div className="flex flex-col items-center gap-6">
-            <div className="p-8 bg-white rounded-lg shadow-lg">
+            <div className="p-8 bg-white rounded-lg">
               <QRCodeSVG 
                 value={mealId}
                 size={256}
@@ -41,27 +41,16 @@ export default function DemoQRPage() {
             </div>
 
             <div className="text-center">
-              <p className="mb-2">Meal ID: {mealId}</p>
+              <p className="mb-2">Mahlzeit-ID: {mealId}</p>
               <Button
                 onClick={() => router.push("/enduser/scan")}
                 size="lg"
               >
-                Go to Scanner
+                Zum Scanner
               </Button>
             </div>
           </div>
 
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
-            <p className="text-blue-800">
-              <strong>How to test:</strong>
-              <br />
-              1. Open the scanner page on your device
-              <br />
-              2. Display this QR code on another device or print it
-              <br />
-              3. Scan the QR code to view the meal details
-            </p>
-          </div>
         </Card>
       </Container>
     </>

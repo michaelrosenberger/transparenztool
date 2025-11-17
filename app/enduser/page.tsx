@@ -41,15 +41,15 @@ export default function EnduserPage() {
     return <PageSkeleton />;
   }
 
-  const fullName = user?.user_metadata?.full_name || "Customer";
+  const fullName = user?.user_metadata?.full_name || "Kunde";
 
   return (
     <>
       <Container dark fullWidth>
         <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div className="">
-            <h1>Welcome, {fullName}!</h1>
-            <p>Your Consumer Dashboard</p>
+            <h1>Willkommen, {fullName}!</h1>
+            <p>Ihr Verbraucher-Dashboard</p>
           </div>
         </div>
       </Container>
@@ -57,10 +57,10 @@ export default function EnduserPage() {
       <Container asPage>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card>
-              <h2 className="mb-4">Scan Meal QR Code</h2>
+              <h2 className="mb-4">Mahlzeit QR-Code scannen</h2>
               <p className="mb-6">
-                Scan the QR code on your meal package to discover detailed information about its ingredients, 
-                the farmers who grew the vegetables, and trace the journey from farm to your table.
+                Scannen Sie den QR-Code auf Ihrer Mahlzeitverpackung, um detaillierte Informationen über die Zutaten, 
+                die Landwirte, die das Gemüse angebaut haben, und die Reise vom Bauernhof bis zu Ihrem Tisch zu erfahren.
               </p>
               <Button 
                 onClick={() => router.push("/enduser/scan")}
@@ -68,14 +68,14 @@ export default function EnduserPage() {
                 className="w-full"
               >
                 <QrCode className="mr-2 h-5 w-5" />
-                Scan QR Code
+                QR-Code scannen
               </Button>
             </Card>
 
             <Card>
-              <h2 className="mb-4">Demo QR Code</h2>
+              <h2 className="mb-4">Demo QR-Code</h2>
               <p className="mb-6">
-                View a demo QR code to test the scanning functionality and see how meal information is displayed.
+                Zeigen Sie einen Demo-QR-Code an, um die Scanfunktion zu testen und zu sehen, wie Mahlzeitinformationen angezeigt werden.
               </p>
               <Button 
                 onClick={() => router.push("/enduser/demo-qr")}
@@ -83,14 +83,14 @@ export default function EnduserPage() {
                 variant="outline"
                 className="w-full"
               >
-                View Demo QR
+                Demo-QR anzeigen
               </Button>
             </Card>
 
             <Card>
-              <h2 className="mb-4">View Demo Meal</h2>
+              <h2 className="mb-4">Demo-Mahlzeit anzeigen</h2>
               <p className="mb-6">
-                Skip the scanning and directly view a sample meal with all details including ingredients, sources, and map.
+                Überspringen Sie das Scannen und sehen Sie sich direkt eine Beispielmahlzeit mit allen Details einschließlich Zutaten, Quellen und Karte an.
               </p>
               <Button 
                 onClick={() => router.push("/enduser/meal/meal-001")}
@@ -98,7 +98,7 @@ export default function EnduserPage() {
                 variant="outline"
                 className="w-full"
               >
-                View Demo Meal
+                Demo-Mahlzeit anzeigen
               </Button>
             </Card>
           </div>

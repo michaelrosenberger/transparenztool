@@ -90,7 +90,7 @@ export default function ScanPage() {
       setScanning(true);
     } catch (err: any) {
       console.error("Scanner error:", err);
-      setError(err.message || "Failed to start camera. Please ensure camera permissions are granted.");
+      setError(err.message || "Kamera konnte nicht gestartet werden. Bitte stellen Sie sicher, dass Kameraberechtigungen erteilt wurden.");
       setScanning(false);
       scannerRef.current = null;
     }
@@ -114,8 +114,8 @@ export default function ScanPage() {
       <Container dark fullWidth>
         <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div>
-            <h1>Scan QR Code</h1>
-            <p>Scan your meal package to discover its origin and ingredients</p>
+            <h1>QR-Code scannen</h1>
+            <p>Scannen Sie Ihre Mahlzeitverpackung, um deren Herkunft und Zutaten zu entdecken</p>
           </div>
         </div>
       </Container>
@@ -123,9 +123,9 @@ export default function ScanPage() {
       <Container asPage>
 
         <Card>
-          <h2 className="mb-4">Scan Your Meal</h2>
+          <h2 className="mb-4">Ihre Mahlzeit scannen</h2>
           <p className="mb-6">
-            Position the QR code within the frame to scan and view detailed meal information.
+            Positionieren Sie den QR-Code im Rahmen, um detaillierte Mahlzeitinformationen anzuzeigen.
           </p>
 
           {error && (
@@ -139,7 +139,7 @@ export default function ScanPage() {
               <div className="w-full aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
                 <div className="text-center">
                   <Camera className="h-16 w-16 mx-auto mb-2 text-gray-400" />
-                  <p className="text-gray-600">Camera preview will appear here</p>
+                  <p className="text-gray-600">Kameravorschau erscheint hier</p>
                 </div>
               </div>
             )}
@@ -167,12 +167,12 @@ export default function ScanPage() {
             {!scanning ? (
               <Button onClick={startScanning} size="lg">
                 <Camera className="mr-2 h-5 w-5" />
-                Start Scanning
+                Scannen starten
               </Button>
             ) : (
               <Button onClick={stopScanning} variant="destructive" size="lg">
                 <CameraOff className="mr-2 h-5 w-5" />
-                Stop Scanning
+                Scannen stoppen
               </Button>
             )}
           </div>

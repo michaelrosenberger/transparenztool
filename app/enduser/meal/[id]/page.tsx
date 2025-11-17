@@ -24,7 +24,7 @@ import { MapPin, Navigation } from "lucide-react";
 // Dynamically import map component to avoid SSR issues
 const MapComponent = dynamic(() => import("@/app/components/MapComponent"), {
   ssr: false,
-  loading: () => <div className="h-96 bg-gray-100 rounded-lg flex items-center justify-center relative z-40">Loading map...</div>
+  loading: () => <div className="h-96 bg-gray-100 rounded-lg flex items-center justify-center relative z-40">Karte wird geladen...</div>
 });
 
 interface Ingredient {
@@ -214,10 +214,10 @@ export default function MealDetailPage() {
 
   if (!meal) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="flex items-center justify-center bg-background">
         <Card>
           <div className="text-center py-8">
-            <p className="mb-4">Meal not found</p>
+            <p className="mb-4">Mahlzeit nicht gefunden</p>
           </div>
         </Card>
       </div>
@@ -264,7 +264,7 @@ export default function MealDetailPage() {
         <div 
           id="ingredients-section"
           className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
-          <h2 className="mb-8">Vegetable Sources</h2>
+          <h2 className="mb-8">Gemüsequellen</h2>
           <div className="space-y-3">
             {meal.vegetables.map((veg, index) => (
               <button

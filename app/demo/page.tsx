@@ -44,7 +44,7 @@ export default function DemoPage() {
       // Transform the data to match our interface
       const farmerProfiles: FarmerProfile[] = (data || []).map((farmer: any) => ({
         user_id: farmer.user_id,
-        full_name: farmer.full_name || "Farmer",
+        full_name: farmer.full_name || "Landwirt",
         profile_image: farmer.profile_image,
         street: farmer.street,
         zip_code: farmer.zip_code,
@@ -71,7 +71,7 @@ export default function DemoPage() {
 
       {farmers.length === 0 ? (
         <div className="text-center py-12 mb-8">
-          <p>No farmers registered yet</p>
+          <p>Noch keine Landwirte registriert</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
@@ -132,9 +132,9 @@ export default function DemoPage() {
       {/* Map showing all farmers */}
       {farmers.length > 0 && (
         <Card className="mb-8">
-          <h3 className="mb-4">Farm Locations</h3>
+          <h3 className="mb-4">Standorte der Bauernhöfe</h3>
           <p className="mb-4">
-            See where all our farmers are located across Austria
+            Sehen Sie, wo sich alle unsere Landwirte in Österreich befinden
           </p>
           <div className="h-96 rounded-lg overflow-hidden relative z-40">
             <MapComponent farmers={farmers} mode="farmers" />

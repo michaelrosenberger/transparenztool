@@ -98,15 +98,15 @@ export default function LogistikPage() {
     return <PageSkeleton />;
   }
 
-  const fullName = user?.user_metadata?.full_name || "Logistics Partner";
+  const fullName = user?.user_metadata?.full_name || "Logistikpartner";
 
   return (
     <>
       <Container dark fullWidth>
         <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div>
-            <h1>Welcome, {fullName}!</h1>
-            <p>Your Logistics Dashboard</p>
+            <h1>Willkommen, {fullName}!</h1>
+            <p>Ihr Logistik-Dashboard</p>
           </div>
         </div>
       </Container>
@@ -116,12 +116,12 @@ export default function LogistikPage() {
         {/* Storage Inventory Summary */}
         {mounted && (
           <Card className="mb-6">
-            <h3 className="mb-4">Storage Inventory</h3>
+            <h3 className="mb-4">Lagerbestand</h3>
             <StorageDataTable columns={columns} data={storageSummary} />
             {storageSummary.length > 0 && (
               <div className="mt-4 pt-4 border-t border-gray-200">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium text-black text-base">Total in Storage:</span>
+                  <span className="font-medium text-black text-base">Gesamt im Lager:</span>
                   <span className="font-medium text-black text-xl">
                     {storageSummary.reduce((sum, item) => sum + item.total_quantity, 0)} kg
                   </span>
@@ -133,29 +133,29 @@ export default function LogistikPage() {
 
         {/* Order Management Sections */}
         <div className="grid gap-6 md:grid-cols-2 mb-6">
-          <Card title="Delivered Orders">
+          <Card title="Gelieferte Bestellungen">
             <p className="mb-4">
-              Review and accept orders that have been delivered by farmers. 
-              Verify order details and accept them for logistics processing.
+              Überprüfen und akzeptieren Sie Bestellungen, die von Landwirten geliefert wurden. 
+              Verifizieren Sie die Bestelldetails und akzeptieren Sie sie für die Logistikverarbeitung.
             </p>
             <Button
               onClick={() => router.push("/logistik/orders/delivered")}
               className="w-full"
             >
-              View Delivered Orders
+              Gelieferte Bestellungen anzeigen
             </Button>
           </Card>
 
-          <Card title="Accepted Orders">
+          <Card title="Akzeptierte Bestellungen">
             <p className="mb-4">
-              View all orders that have been accepted for logistics processing. 
-              These orders are read-only and cannot be modified.
+              Zeigen Sie alle Bestellungen an, die für die Logistikverarbeitung akzeptiert wurden. 
+              Diese Bestellungen sind schreibgeschützt und können nicht geändert werden.
             </p>
             <Button
               onClick={() => router.push("/logistik/orders/accepted")}
               className="w-full"
             >
-              View Accepted Orders
+              Akzeptierte Bestellungen anzeigen
             </Button>
           </Card>
         </div>

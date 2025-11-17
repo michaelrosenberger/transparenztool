@@ -84,7 +84,7 @@ export default function OrderDetailPage() {
       setOrder(data);
     } catch (error) {
       console.error("Error loading order:", error);
-      setMessage({ type: "error", text: "Order not found" });
+      setMessage({ type: "error", text: "Bestellung nicht gefunden" });
     }
   };
 
@@ -103,9 +103,9 @@ export default function OrderDetailPage() {
       if (error) throw error;
 
       setOrder({ ...order, status: newStatus });
-      setMessage({ type: "success", text: `Order status updated to ${newStatus}` });
+      setMessage({ type: "success", text: `Bestellstatus aktualisiert auf ${newStatus}` });
     } catch (error: any) {
-      setMessage({ type: "error", text: error.message || "Failed to update status" });
+      setMessage({ type: "error", text: error.message || "Status konnte nicht aktualisiert werden" });
     } finally {
       setUpdating(false);
     }
@@ -126,9 +126,24 @@ export default function OrderDetailPage() {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "Announced":
+        return "Angekündigt";
+      case "Delivered":
+        return "Geliefert";
+      case "Accepted":
+        return "Akzeptiert";
+      case "Stored":
+        return "Gelagert";
+      default:
+        return status;
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString("de-DE", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -148,10 +163,10 @@ export default function OrderDetailPage() {
 
   if (!order) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="flex items-center justify-center bg-background">
         <Card>
           <div className="text-center py-8">
-            <p className="mb-4">Order not found</p>
+            <p className="mb-4">Bestellung nicht gefunden</p>
           </div>
         </Card>
       </div>
@@ -163,8 +178,8 @@ export default function OrderDetailPage() {
       <Container dark fullWidth>
         <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div>
-            <h1>Order Details</h1>
-            <p>View and update your order status</p>
+            <h1>Bestelldetails</h1>
+            <p>Bestellstatus anzeigen und aktualisieren</p>
           </div>
         </div>
       </Container>
@@ -175,7 +190,7 @@ export default function OrderDetailPage() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {message?.type === "success" ? "Success" : ""}
+                {message?.type === "success" ? "Erfolg" : "Fehler"}
               </AlertDialogTitle>
               <AlertDialogDescription>
                 {message?.text}
@@ -193,33 +208,33 @@ export default function OrderDetailPage() {
               <h3 className="mb-2">
                 {order.order_number}
               </h3>
-              <p>Farmer: {order.farmer_name}</p>
+              <p>Landwirt: {order.farmer_name}</p>
             </div>
             <Badge variant={getStatusVariant(order.status) as any}>
-              {order.status}
+              {getStatusLabel(order.status)}
             </Badge>
           </div>
 
           <div className="grid grid-cols-2 gap-4 py-4 border-t border-b border-gray-200">
             <div>
-              <p className="mb-1">Created</p>
+              <p className="mb-1">Erstellt</p>
               <p className="font-medium text-black">{formatDate(order.created_at)}</p>
             </div>
             <div>
-              <p className="mb-1">Last Updated</p>
+              <p className="mb-1">Zuletzt aktualisiert</p>
               <p className="font-medium text-black">{formatDate(order.updated_at)}</p>
             </div>
           </div>
         </Card>
 
         <Card className="mb-6">
-          <h3 className="mb-4">Order Items</h3>
+          <h3 className="mb-4">Bestellartikel</h3>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[100px]">No.</TableHead>
-                <TableHead>Vegetable</TableHead>
-                <TableHead className="text-right">Quantity</TableHead>
+                <TableHead className="w-[100px]">Nr.</TableHead>
+                <TableHead>Gemüse</TableHead>
+                <TableHead className="text-right">Menge</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -233,7 +248,7 @@ export default function OrderDetailPage() {
             </TableBody>
             <TableFooter>
               <TableRow>
-                <TableCell colSpan={2} className="font-medium">Total Items: {order.items.length}</TableCell>
+                <TableCell colSpan={2} className="font-medium">Artikel gesamt: {order.items.length}</TableCell>
                 <TableCell className="text-right font-bold">{getTotalQuantity()} kg</TableCell>
               </TableRow>
             </TableFooter>
@@ -241,9 +256,9 @@ export default function OrderDetailPage() {
         </Card>
 
         <Card>
-          <h3 className="mb-4">Update Status</h3>
+          <h3 className="mb-4">Status aktualisieren</h3>
           <p className="mb-4">
-            Change the order status to track its progress through the supply chain.
+            Ändern Sie den Bestellstatus, um den Fortschritt in der Lieferkette zu verfolgen.
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -253,7 +268,7 @@ export default function OrderDetailPage() {
               variant={order.status === "Announced" ? "secondary" : "outline"}
               size="lg"
             >
-              Announced
+              Angekündigt
             </Button>
             
             <Button
@@ -263,7 +278,7 @@ export default function OrderDetailPage() {
               size="lg"
               className={order.status === "Delivered" ? "bg-green-600 hover:bg-green-700" : ""}
             >
-              Delivered
+              Geliefert
             </Button>
             
             <Button
@@ -273,7 +288,7 @@ export default function OrderDetailPage() {
               size="lg"
               className={order.status === "Stored" ? "bg-purple-600 hover:bg-purple-700" : ""}
             >
-              Stored
+              Gelagert
             </Button>
           </div>
         </Card>

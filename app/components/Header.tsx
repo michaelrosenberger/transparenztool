@@ -66,7 +66,7 @@ export default function Header() {
               <Link
                 href={user ? "/profile" : "/login"}
                 className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors text-black"
-                title={user ? (fullName || "Profile") : "Login"}
+                title={user ? (fullName || "Profil") : "Anmelden"}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -88,7 +88,7 @@ export default function Header() {
             {/* Dropdown Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" aria-label="Menu" className="pr-0">
+                <Button variant="ghost" aria-label="Menu" className="pr-0 -mr-3">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"
@@ -109,7 +109,7 @@ export default function Header() {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem asChild>
                   <Link href="/" className="cursor-pointer no-underline">
-                    Home
+                    Startseite
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -126,12 +126,12 @@ export default function Header() {
                 <DropdownMenuSeparator />
                 
                 {loading ? (
-                  <DropdownMenuLabel>Loading...</DropdownMenuLabel>
+                  <DropdownMenuLabel>Lädt...</DropdownMenuLabel>
                 ) : user ? (
                   <>
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="font-medium leading-none">{fullName || "User"}</p>
+                        <p className="font-medium leading-none">{fullName || "Benutzer"}</p>
                         <p className="text-xs leading-none">
                           {user.email}
                         </p>
@@ -140,23 +140,23 @@ export default function Header() {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
                       <Link href="/profile" className="cursor-pointer no-underline">
-                        Profile
+                        Profil
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleLogout} className="cursor-pointer no-underline">
-                      Logout
+                      Abmelden
                     </DropdownMenuItem>
                   </>
                 ) : (
                   <>
                     <DropdownMenuItem asChild>
                       <Link href="/login" className="cursor-pointer no-underline">
-                        Login
+                        Anmelden
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/register" className="cursor-pointer no-underline">
-                        Register
+                        Registrieren
                       </Link>
                     </DropdownMenuItem>
                   </>

@@ -34,7 +34,7 @@ export default function Login() {
       router.push("/");
       router.refresh();
     } catch (error: any) {
-      setError(error.message || "An error occurred during login");
+      setError(error.message || "Ein Fehler ist beim Anmelden aufgetreten");
     } finally {
       setLoading(false);
     }
@@ -45,8 +45,8 @@ export default function Login() {
       <Container dark fullWidth>
         <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div>
-            <h1>Login</h1>
-            <p>Sign in to access your dashboard</p>
+            <h1>Anmelden</h1>
+            <p>Melden Sie sich an, um auf Ihr Dashboard zuzugreifen</p>
           </div>
         </div>
       </Container>
@@ -63,19 +63,19 @@ export default function Login() {
 
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">E-Mail</Label>
                   <Input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    placeholder="you@example.com"
+                    placeholder="ihre@email.de"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">Passwort</Label>
                   <Input
                     id="password"
                     type="password"
@@ -92,18 +92,18 @@ export default function Login() {
                   className="w-full"
                   size="lg"
                 >
-                  {loading ? "Logging in..." : "Login"}
+                  {loading ? "Wird angemeldet..." : "Anmelden"}
                 </Button>
               </form>
 
               <div className="mt-6 text-center">
                 <p>
-                  Don't have an account?{" "}
+                  Noch kein Konto?{" "}
                   <Link
                     href="/register"
                     className="font-medium hover:underline"
                   >
-                    Register here
+                    Hier registrieren
                   </Link>
                 </p>
               </div>

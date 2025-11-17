@@ -35,6 +35,7 @@ export default function LogistikOrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [accepting, setAccepting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   
   const router = useRouter();
   const params = useParams();
@@ -76,13 +77,14 @@ export default function LogistikOrderDetailPage() {
       setOrder(data);
     } catch (error) {
       console.error("Error loading order:", error);
-      setMessage({ type: "error", text: "Order not found" });
+      setMessage({ type: "error", text: "Bestellung nicht gefunden" });
     }
   };
 
   const acceptOrder = async () => {
     if (!order) return;
 
+    setShowConfirmDialog(false);
     setAccepting(true);
     setMessage(null);
 
@@ -110,14 +112,14 @@ export default function LogistikOrderDetailPage() {
 
       if (storageError) throw storageError;
 
-      setMessage({ type: "success", text: "Order accepted and added to storage successfully!" });
+      setMessage({ type: "success", text: "Bestellung akzeptiert und erfolgreich zum Lager hinzugefügt!" });
       
       // Redirect to accepted orders after 2 seconds
       setTimeout(() => {
         router.push("/logistik/orders/accepted");
       }, 2000);
     } catch (error: any) {
-      setMessage({ type: "error", text: error.message || "Failed to accept order" });
+      setMessage({ type: "error", text: error.message || "Bestellung konnte nicht akzeptiert werden" });
     } finally {
       setAccepting(false);
     }
@@ -136,9 +138,24 @@ export default function LogistikOrderDetailPage() {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "Announced":
+        return "Angekündigt";
+      case "Delivered":
+        return "Geliefert";
+      case "Accepted":
+        return "Akzeptiert";
+      case "Stored":
+        return "Gelagert";
+      default:
+        return status;
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString("de-DE", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -158,10 +175,10 @@ export default function LogistikOrderDetailPage() {
 
   if (!order) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="flex items-center justify-center bg-background">
         <Card>
           <div className="text-center py-8">
-            <p className="mb-4">Order not found</p>
+            <p className="mb-4">Bestellung nicht gefunden</p>
           </div>
         </Card>
       </div>
@@ -175,16 +192,9 @@ export default function LogistikOrderDetailPage() {
       <Container dark fullWidth>
         <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div>
-            <h1>Order Details</h1>
-            <p>Review order information and accept for processing</p>
+            <h1>Bestelldetails</h1>
+            <p>Bestellinformationen überprüfen und zur Verarbeitung akzeptieren</p>
           </div>
-          <Button
-            onClick={() => router.push(isDelivered ? "/logistik/orders/delivered" : "/logistik/orders/accepted")}
-            variant="ghost"
-            className="hover:text-foreground"
-          >
-            ← Back
-          </Button>
         </div>
       </Container>
 
@@ -194,7 +204,7 @@ export default function LogistikOrderDetailPage() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                {message?.type === "success" ? "Success" : "Error"}
+                {message?.type === "success" ? "Erfolg" : "Fehler"}
               </AlertDialogTitle>
               <AlertDialogDescription>
                 {message?.text}
@@ -207,36 +217,39 @@ export default function LogistikOrderDetailPage() {
         </AlertDialog>
 
         <Card className="mb-6">
-          <div className="flex items-start justify-between mb-6">
+          <div className="flex items-start justify-between mb-6 flex-wrap">
             <div>
-              <h3 className="mb-2">
-                {order.order_number}
-              </h3>
-              <p className="text-lg">Farmer: {order.farmer_name}</p>
+              <div className="flex gap-3 items-center flex-wrap mb-2">
+                <h3 className="">
+                  {order.order_number}
+                </h3>
+                <Badge variant={getStatusVariant(order.status) as any}>
+                  {getStatusLabel(order.status)}
+                </Badge>
+              </div>
+              <p>Landwirt: {order.farmer_name}</p>
             </div>
-            <Badge variant={getStatusVariant(order.status) as any}>
-              {order.status}
-            </Badge>
+          
           </div>
 
-          <div className="grid grid-cols-2 gap-4 py-4 border-t border-b border-gray-200">
+          <div className="grid sm:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
             <div>
-              <p className="mb-1">Created</p>
+              <p className="mb-1">Erstellt</p>
               <p className="font-medium text-black">{formatDate(order.created_at)}</p>
             </div>
             <div>
-              <p className="mb-1">Last Updated</p>
+              <p className="mb-1">Zuletzt aktualisiert</p>
               <p className="font-medium text-black">{formatDate(order.updated_at)}</p>
             </div>
           </div>
         </Card>
 
         <Card className="mb-6">
-          <h3 className="mb-4">Order Items</h3>
+          <h3 className="mb-4">Bestellartikel</h3>
           <OrderItemsDataTable columns={columns} data={order.items} />
           <div className="mt-4 pt-4 border-t border-gray-200">
             <div className="flex justify-between items-center mt-2">
-              <span className="font-medium text-black text-base">Total Quantity:</span>
+              <span className="font-medium text-black text-base">Gesamtmenge:</span>
               <span className="font-medium text-black text-xl">
                 {getTotalQuantity()} kg
               </span>
@@ -245,21 +258,49 @@ export default function LogistikOrderDetailPage() {
         </Card>
 
         {isDelivered && (
-          <Card>
-            <h3 className="mb-4">Accept Order</h3>
-            <p className="mb-4">
-              Review the order details above and accept the delivery to proceed with logistics processing.
-            </p>
-            
-            <Button
-              onClick={acceptOrder}
-              disabled={accepting}
-              size="lg"
-              className="w-full"
-            >
-              {accepting ? "Accepting..." : "Accept Order"}
-            </Button>
-          </Card>
+          <>
+            <Card>
+              <h3 className="mb-4">Bestellung akzeptieren</h3>
+              <p className="mb-4">
+                Überprüfen Sie die obigen Bestelldetails und akzeptieren Sie die Lieferung, um mit der Logistikverarbeitung fortzufahren.
+              </p>
+              
+              <Button
+                onClick={() => setShowConfirmDialog(true)}
+                disabled={accepting}
+                size="lg"
+                className="w-full"
+              >
+                {accepting ? "Wird akzeptiert..." : "Bestellung akzeptieren"}
+              </Button>
+            </Card>
+
+            <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Bestellung akzeptieren?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Möchten Sie die Bestellung <strong>{order?.order_number}</strong> wirklich akzeptieren? 
+                    Die Bestellung wird zum Lager hinzugefügt und kann danach nicht mehr geändert werden.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="flex gap-3 justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowConfirmDialog(false)}
+                  >
+                    Abbrechen
+                  </Button>
+                  <Button
+                    onClick={acceptOrder}
+                    disabled={accepting}
+                  >
+                    {accepting ? "Wird akzeptiert..." : "Ja, akzeptieren"}
+                  </Button>
+                </div>
+              </AlertDialogContent>
+            </AlertDialog>
+          </>
         )}
       </Container>
     </>

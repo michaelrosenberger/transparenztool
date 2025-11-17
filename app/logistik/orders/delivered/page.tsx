@@ -8,6 +8,15 @@ import Container from "@/app/components/Container";
 import PageSkeleton from "@/app/components/PageSkeleton";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface Order {
   id: string;
@@ -66,7 +75,7 @@ export default function DeliveredOrdersPage() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString("de-DE", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -79,6 +88,36 @@ export default function DeliveredOrdersPage() {
     return items.reduce((sum, item) => sum + item.quantity, 0);
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "Announced":
+        return "Angekündigt";
+      case "Delivered":
+        return "Geliefert";
+      case "Accepted":
+        return "Akzeptiert";
+      case "Stored":
+        return "Gelagert";
+      default:
+        return status;
+    }
+  };
+
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case "Announced":
+        return "announced";
+      case "Delivered":
+        return "delivered";
+      case "Accepted":
+        return "accepted";
+      case "Stored":
+        return "stored";
+      default:
+        return "outline";
+    }
+  };
+
   if (loading) {
     return <PageSkeleton />;
   }
@@ -88,74 +127,69 @@ export default function DeliveredOrdersPage() {
       <Container dark fullWidth>
         <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div>
-            <h1>Delivered Orders</h1>
-            <p>Review and accept delivered orders from farmers</p>
+            <h1>Gelieferte Bestellungen</h1>
+            <p>Gelieferte Bestellungen von Landwirten überprüfen und akzeptieren</p>
           </div>
         </div>
       </Container>
 
       <Container asPage>
-
-        <p className="mb-6">
-          Review and accept delivered orders from farmers
-        </p>
-
         {orders.length === 0 ? (
           <Card>
             <div className="text-center py-12">
-              <p>No delivered orders available</p>
+              <p>Keine gelieferten Bestellungen verfügbar</p>
             </div>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {orders.map((order) => (
-              <Card key={order.id}>
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="mb-1">
-                      {order.order_number}
-                    </h3>
-                    <p>
-                      Farmer: <span className="font-medium">{order.farmer_name}</span>
-                    </p>
-                    <p>
-                      Delivered: {formatDate(order.updated_at)}
-                    </p>
-                  </div>
-                  <span className="px-3 py-1 rounded-full font-medium border bg-green-100 text-green-800 border-green-200">
-                    Delivered
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                  <div>
-                    <p>Items</p>
-                    <p className="font-medium text-black">{order.items.length}</p>
-                  </div>
-                  <div>
-                    <p>Total Quantity</p>
-                    <p className="font-medium text-black">
-                      {getTotalQuantity(order.items)} kg
-                    </p>
-                  </div>
-                  <div className="col-span-2">
-                    <p>Vegetables</p>
-                    <p className="font-medium text-black">
-                      {order.items.map((item) => item.vegetable).join(", ")}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <Button asChild size="sm">
-                    <Link href={`/logistik/orders/${order.id}`}>
-                      Review & Accept →
-                    </Link>
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
+          <Card>
+            <h3 className="mb-4">Gelieferte Bestellungen</h3>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Bestellnummer</TableHead>
+                    <TableHead>Landwirt</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Artikel</TableHead>
+                    <TableHead>Gesamtmenge</TableHead>
+                    <TableHead className="hidden md:table-cell">Gemüse</TableHead>
+                    <TableHead>Geliefert</TableHead>
+                    <TableHead className="text-right">Aktionen</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {orders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-medium">
+                        {order.order_number}
+                      </TableCell>
+                      <TableCell>{order.farmer_name}</TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusVariant(order.status) as any}>
+                          {getStatusLabel(order.status)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{order.items.length}</TableCell>
+                      <TableCell>{getTotalQuantity(order.items)} kg</TableCell>
+                      <TableCell className="hidden md:table-cell max-w-xs truncate">
+                        {order.items.map((item) => item.vegetable).join(", ")}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {formatDate(order.updated_at)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button asChild variant="ghost" size="sm">
+                          <Link href={`/logistik/orders/${order.id}`}>
+                            Überprüfen →
+                          </Link>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
         )}
       </Container>
     </>

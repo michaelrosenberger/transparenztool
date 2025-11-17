@@ -40,15 +40,15 @@ export default function FarmerPage() {
     return <PageSkeleton />;
   }
 
-  const fullName = user?.user_metadata?.full_name || "Farmer";
+  const fullName = user?.user_metadata?.full_name || "Landwirt";
 
   return (
     <>
       <Container dark fullWidth>
         <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div>
-            <h1>Welcome, {fullName}!</h1>
-            <p>Your Farmer Dashboard</p>
+            <h1>Willkommen, {fullName}!</h1>
+            <p>Ihr Landwirt-Dashboard</p>
           </div>
         </div>
       </Container>
@@ -58,27 +58,27 @@ export default function FarmerPage() {
         {/* Order Management Section */}
         <Card className="mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2>Order Management</h2>
+            <h2>Bestellverwaltung</h2>
           </div>
           <p className="mb-4">
-            Create and manage your vegetable orders. Track order status from announcement 
-            to delivery and storage.
+            Erstellen und verwalten Sie Ihre Gemüsebestellungen. Verfolgen Sie den Bestellstatus von der Ankündigung 
+            bis zur Lieferung und Lagerung.
           </p>
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
             <Button
               onClick={() => router.push("/farmer/orders/new")}
               size="lg"
-              className="flex-1"
+              className="w-full sm:w-auto"
             >
-              + Create New Order
+              + Neue Bestellung erstellen
             </Button>
             <Button
               onClick={() => router.push("/farmer/orders")}
               variant="outline"
               size="lg"
-              className="flex-1"
+              className="w-full sm:w-auto"
             >
-              View All Orders
+              Alle Bestellungen anzeigen
             </Button>
           </div>
         </Card>
