@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import Card from "@/app/components/Card";
@@ -8,21 +8,22 @@ import Container from "@/app/components/Container";
 import PageSkeleton from "@/app/components/PageSkeleton";
 import { Button } from "@/components/ui/button";
 
-export default function Home() {
+function HomeContent() {
   const [loading, setLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     // Check if user just registered
     if (searchParams.get("registered") === "true") {
       setShowSuccess(true);
       // Clean up URL
-      router.replace("/");
+      setShowSuccess(false);
     }
-  }, [searchParams, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     const checkUserAndRedirect = async () => {
@@ -99,5 +100,13 @@ export default function Home() {
         </Card>
       </Container>
     </>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <HomeContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Card from "@/app/components/Card";
@@ -56,7 +56,7 @@ export default function NewOrderPage() {
   const [drawerQuantity, setDrawerQuantity] = useState<number>(1);
   
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -90,7 +90,8 @@ export default function NewOrderPage() {
     };
 
     checkUser();
-  }, [router, supabase.auth]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const generateOrderNumber = () => {
     const date = new Date();

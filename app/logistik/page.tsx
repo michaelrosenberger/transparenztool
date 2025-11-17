@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Card from "@/app/components/Card";
@@ -21,7 +21,7 @@ export default function LogistikPage() {
   const [mounted, setMounted] = useState(false);
   const [storageSummary, setStorageSummary] = useState<StorageSummary[]>([]);
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -45,7 +45,8 @@ export default function LogistikPage() {
     };
 
     checkUser();
-  }, [router, supabase.auth]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadStorageSummary = async () => {
     try {

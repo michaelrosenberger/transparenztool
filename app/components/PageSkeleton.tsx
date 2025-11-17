@@ -4,7 +4,7 @@ export default function PageSkeleton() {
   return (
     <Container asPage>
         {/* Header skeleton */}
-        <div className="mb-8 animate-pulse">
+        <div className="mb-1 animate-pulse min-h-[160px]">
           <div className="h-12 bg-gray-200 rounded-md w-2/3 mb-4"></div>
           <div className="h-6 bg-gray-200 rounded-md w-1/3"></div>
         </div>

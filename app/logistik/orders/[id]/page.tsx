@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useParams } from "next/navigation";
 import Card from "@/app/components/Card";
@@ -39,7 +39,7 @@ export default function LogistikOrderDetailPage() {
   
   const router = useRouter();
   const params = useParams();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const orderId = params.id as string;
 
   useEffect(() => {
@@ -63,7 +63,8 @@ export default function LogistikOrderDetailPage() {
     };
 
     checkUserAndLoadOrder();
-  }, [orderId, router, supabase.auth]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId]);
 
   const loadOrder = async (id: string) => {
     try {
