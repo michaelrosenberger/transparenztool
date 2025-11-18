@@ -3,9 +3,12 @@ import { NextResponse } from "next/server";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params in Next.js 15
+    const { id } = await params;
+
     // Create a Supabase client with service role key for admin operations
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -32,7 +35,7 @@ export async function GET(
     }
 
     // Get the requested user
-    const { data, error } = await supabaseAdmin.auth.admin.getUserById(params.id);
+    const { data, error } = await supabaseAdmin.auth.admin.getUserById(id);
 
     if (error) {
       console.error("Error fetching user:", error);
