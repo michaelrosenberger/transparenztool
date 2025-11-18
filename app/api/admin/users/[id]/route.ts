@@ -4,7 +4,7 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await createClient();
 
@@ -16,8 +16,9 @@ export async function PATCH(
   }
 
   try {
+    const { id } = await params;
     const body = await request.json();
-    const userId = params.id;
+    const userId = id;
 
     // Create admin client with service role key
     const supabaseAdmin = createServiceClient(
@@ -51,7 +52,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await createClient();
 
@@ -63,7 +64,8 @@ export async function DELETE(
   }
 
   try {
-    const userId = params.id;
+    const { id } = await params;
+    const userId = id;
 
     // Create admin client with service role key
     const supabaseAdmin = createServiceClient(
