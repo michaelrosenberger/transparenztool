@@ -114,8 +114,8 @@ create policy "Logistics can insert storage"
     (auth.jwt()->>'user_metadata')::jsonb->>'occupation' = 'Logistik'
   );
 
--- Policy: Farmers can view their own storage entries
-create policy "Farmers can view own storage"
+-- Policy: Produzenten can view their own storage entries
+create policy "Produzenten can view own storage"
   on storage for select
   using (
     exists (
@@ -150,8 +150,8 @@ The `items` field is a JSONB array containing objects with this structure:
 
 ## Order Statuses
 
-- **Announced** - Order has been created and submitted (Farmer)
-- **Delivered** - Order has been delivered (Farmer)
+- **Announced** - Order has been created and submitted (Produzenten)
+- **Delivered** - Order has been delivered (Produzenten)
 - **Accepted** - Order has been accepted by logistics (Logistics)
 - **Stored** - (Future) Order has been stored in warehouse
 
@@ -165,7 +165,7 @@ insert into orders (order_number, user_id, farmer_name, items)
 values (
   'ORD-2024-001',
   auth.uid(),
-  'Test Farmer',
+  'Test Produzent',
   '[{"vegetable": "Tomatoes", "quantity": 100}]'::jsonb
 );
 

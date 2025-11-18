@@ -34,20 +34,7 @@ import {
   MultiSelectValue,
 } from "@/components/ui/multi-select";
 
-type Occupation = "Farmer" | "Logistik" | "Enduser";
-
-const VEGETABLES = [
-  "Tomaten",
-  "Karotten",
-  "Kartoffeln",
-  "Salat",
-  "Gurken",
-  "Paprika",
-  "Zwiebeln",
-  "Kohl",
-  "Brokkoli",
-  "Blumenkohl",
-];
+type Occupation = "Produzenten" | "Logistik" | "Enduser";
 
 export default function Profile() {
   const [loading, setLoading] = useState(true);
@@ -60,6 +47,7 @@ export default function Profile() {
   const [city, setCity] = useState("");
   const [addressCoordinates, setAddressCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [vegetables, setVegetables] = useState<string[]>([]);
+  const [availableVegetables, setAvailableVegetables] = useState<string[]>([]);
   const [profileImage, setProfileImage] = useState<string>("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -74,8 +62,26 @@ export default function Profile() {
 
   useEffect(() => {
     loadProfile();
+    loadAvailableVegetables();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const loadAvailableVegetables = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("ingredients")
+        .select("name")
+        .eq("is_available", true)
+        .order("name");
+
+      if (error) throw error;
+
+      setAvailableVegetables(data.map((item) => item.name));
+    } catch (error) {
+      // Silently fail, keep empty array
+      setAvailableVegetables([]);
+    }
+  };
 
   const loadProfile = async () => {
     try {
@@ -320,8 +326,8 @@ export default function Profile() {
               />
             </div>
 
-            {/* Profile Image Upload - Only for Farmers */}
-            {occupation === "Farmer" && (
+            {/* Profile Image Upload - Only for Produzenten */}
+            {occupation === "Produzenten" && (
               <div className="space-y-2">
                 <Label>Profilbild</Label>
                 <div className="flex items-center gap-4 flex-wrap">
@@ -371,14 +377,14 @@ export default function Profile() {
                 <SelectContent
                   className="w-full"
                 >
-                  <SelectItem value="Farmer">Landwirt</SelectItem>
+                  <SelectItem value="Produzenten">Produzent</SelectItem>
                   <SelectItem value="Logistik">Logistik</SelectItem>
                   <SelectItem value="Enduser">Endverbraucher</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Address Fields - Only for Farmers and Logistik */}
+            {/* Address Fields - Only for Produzenten and Logistik */}
             {occupation !== "Enduser" && (
               <>
                 <div className="space-y-2">
@@ -437,30 +443,6 @@ export default function Profile() {
                   </div>
                 )}
               </>
-            )}
-
-            {/* Vegetables Multi-Select - Only for Farmers */}
-            {occupation === "Farmer" && (
-              <div className="space-y-2">
-                <Label>Verfügbares Gemüse (Optional)</Label>
-                <MultiSelect
-                  values={vegetables}
-                  onValuesChange={setVegetables}
-                >
-                  <MultiSelectTrigger className="w-full min-h-[50px]">
-                    <MultiSelectValue placeholder="Wählen Sie Gemüse aus, das Sie anbauen..." />
-                  </MultiSelectTrigger>
-                  <MultiSelectContent>
-                    <MultiSelectGroup>
-                      {VEGETABLES.map((vegetable) => (
-                        <MultiSelectItem key={vegetable} value={vegetable}>
-                          {vegetable}
-                        </MultiSelectItem>
-                      ))}
-                    </MultiSelectGroup>
-                  </MultiSelectContent>
-                </MultiSelect>
-              </div>
             )}
 
             <Button

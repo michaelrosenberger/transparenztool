@@ -4,7 +4,7 @@ A modern supply chain transparency platform built with Next.js and Supabase, ena
 
 ## Features
 
-### 👨‍🌾 Farmer Dashboard
+### 👨‍🌾 Produzenten Dashboard
 - **Order Management**: Create, view, and manage delivery orders
 - **Status Tracking**: Update order status from Announced → Delivered
 - **Order History**: View all past and current orders
@@ -88,7 +88,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 The app supports three user types (set during registration):
 
-- **Farmer**: Create and manage delivery orders
+- **Produzenten**: Create and manage delivery orders
 - **Logistik**: Accept deliveries and manage storage inventory
 - **Enduser**: Track product transparency (coming soon)
 
@@ -98,7 +98,7 @@ The app supports three user types (set during registration):
 transparenztool/
 ├── app/
 │   ├── components/          # Reusable components (Header, Card)
-│   ├── farmer/             # Farmer dashboard and order pages
+│   ├── produzenten/        # Produzenten dashboard and order pages
 │   ├── logistik/           # Logistics dashboard and order management
 │   ├── enduser/            # End user dashboard
 │   ├── login/              # Authentication pages
@@ -114,8 +114,8 @@ transparenztool/
 
 ### Order Flow
 
-1. **Farmer** creates an order with vegetables and quantities
-2. **Farmer** marks order as "Delivered"
+1. **Produzenten** creates an order with vegetables and quantities
+2. **Produzenten** marks order as "Delivered"
 3. **Logistics** reviews the delivered order
 4. **Logistics** accepts the order
 5. Each vegetable is automatically added to storage inventory

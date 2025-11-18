@@ -136,7 +136,7 @@ export default function LogistikPage() {
         <div className="grid gap-6 md:grid-cols-2 mb-6">
           <Card title="Gelieferte Bestellungen">
             <p className="mb-4">
-              Überprüfen und akzeptieren Sie Bestellungen, die von Landwirten geliefert wurden. 
+              Überprüfen und akzeptieren Sie Bestellungen, die von Produzenten geliefert wurden. 
               Verifizieren Sie die Bestelldetails und akzeptieren Sie sie für die Logistikverarbeitung.
             </p>
             <Button

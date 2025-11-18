@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 
-type Occupation = "Farmer" | "Logistik" | "Enduser";
+type Occupation = "Produzenten" | "Logistik" | "Enduser";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -124,7 +124,7 @@ export default function Register() {
                       <SelectValue placeholder="Tätigkeit" />
                     </SelectTrigger>
                     <SelectContent className="w-full">
-                      <SelectItem value="Farmer">Landwirt</SelectItem>
+                      <SelectItem value="Produzenten">Produzent</SelectItem>
                       <SelectItem value="Logistik">Logistik</SelectItem>
                       <SelectItem value="Enduser">Endverbraucher</SelectItem>
                     </SelectContent>

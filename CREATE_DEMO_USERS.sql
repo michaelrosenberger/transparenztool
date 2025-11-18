@@ -35,7 +35,7 @@ INSERT INTO auth.users (
   '{"provider":"email","providers":["email"]}',
   '{
     "full_name": "Hans Müller",
-    "occupation": "Farmer",
+    "occupation": "Produzenten",
     "street": "Schönbrunner Straße 123",
     "zip_code": "1050",
     "city": "Wien",
@@ -84,7 +84,7 @@ INSERT INTO auth.users (
   '{"provider":"email","providers":["email"]}',
   '{
     "full_name": "Maria Schmidt",
-    "occupation": "Farmer",
+    "occupation": "Produzenten",
     "street": "Herrengasse 45",
     "zip_code": "8010",
     "city": "Graz",
@@ -133,7 +133,7 @@ INSERT INTO auth.users (
   '{"provider":"email","providers":["email"]}',
   '{
     "full_name": "Josef Weber",
-    "occupation": "Farmer",
+    "occupation": "Produzenten",
     "street": "Getreidegasse 28",
     "zip_code": "5020",
     "city": "Salzburg",

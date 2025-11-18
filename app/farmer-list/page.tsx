@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 import Container from "@/app/components/Container";
 import Card from "@/app/components/Card";
 import PageSkeleton from "@/app/components/PageSkeleton";
@@ -18,6 +19,8 @@ interface FarmerProfile {
   user_id: string;
   full_name: string;
   profile_image?: string;
+  business_images?: string[];
+  featured_image_index?: number;
   street?: string;
   zip_code?: string;
   city?: string;
@@ -28,11 +31,29 @@ interface FarmerProfile {
 export default function FarmerListPage() {
   const [loading, setLoading] = useState(true);
   const [farmers, setFarmers] = useState<FarmerProfile[]>([]);
+  const [activeIngredients, setActiveIngredients] = useState<string[]>([]);
   const supabase = createClient();
 
   useEffect(() => {
+    loadActiveIngredients();
     loadFarmers();
   }, []);
+
+  const loadActiveIngredients = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("ingredients")
+        .select("name")
+        .eq("is_available", true);
+
+      if (error) throw error;
+
+      const ingredientNames = (data || []).map((ing: any) => ing.name);
+      setActiveIngredients(ingredientNames);
+    } catch (error) {
+      console.error("Error loading active ingredients:", error);
+    }
+  };
 
   const loadFarmers = async () => {
     try {
@@ -44,8 +65,10 @@ export default function FarmerListPage() {
       // Transform the data to match our interface
       const farmerProfiles: FarmerProfile[] = (data || []).map((farmer: any) => ({
         user_id: farmer.user_id,
-        full_name: farmer.full_name || "Landwirt",
+        full_name: farmer.full_name || "Produzent",
         profile_image: farmer.profile_image,
+        business_images: farmer.business_images || [],
+        featured_image_index: farmer.featured_image_index || 0,
         street: farmer.street,
         zip_code: farmer.zip_code,
         city: farmer.city,
@@ -71,7 +94,7 @@ export default function FarmerListPage() {
         <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div>
             <h1>Die Produzenten</h1>
-            <p>Entdecke alle regionalen Landwirte und ihre Produkte</p>
+            <p>Entdecke alle regionalen Produzenten und ihre Produkte</p>
           </div>
         </div>
       </Container>
@@ -80,7 +103,7 @@ export default function FarmerListPage() {
 
       {farmers.length === 0 ? (
         <div className="text-center py-12 mb-8">
-          <p>Noch keine Landwirte registriert</p>
+          <p>Noch keine Produzenten registriert</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
@@ -89,15 +112,24 @@ export default function FarmerListPage() {
             const address = [farmer.street, farmer.zip_code, farmer.city]
               .filter(Boolean)
               .join(", ");
-            const vegetables = farmer.vegetables || [];
+            // Filter vegetables to only show active ingredients
+            const vegetables = (farmer.vegetables || []).filter(veg => 
+              activeIngredients.includes(veg)
+            );
+            
+            // Get featured image or fall back to profile image
+            const featuredImage = farmer.business_images && farmer.business_images.length > 0
+              ? farmer.business_images[farmer.featured_image_index || 0]
+              : farmer.profile_image;
 
             return (
-              <Card key={farmer.user_id}>
-                {/* Profile Image */}
-                <div className="aspect-video bg-gray-100 relative overflow-hidden rounded-lg mb-4">
-                  {farmer.profile_image ? (
+              <Link key={farmer.user_id} href={`/produzent/${farmer.user_id}`} className="no-underline">
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow h-full">
+                  {/* Featured Business Image */}
+                  <div className="aspect-video bg-gray-100 relative overflow-hidden rounded-lg mb-4">
+                  {featuredImage ? (
                     <img
-                      src={farmer.profile_image}
+                      src={featuredImage}
                       alt={fullName}
                       className="w-full h-full object-cover"
                     />
@@ -133,6 +165,7 @@ export default function FarmerListPage() {
                   </div>
                 )}
               </Card>
+              </Link>
             );
           })}
         </div>
@@ -143,7 +176,7 @@ export default function FarmerListPage() {
         <Card className="mb-8">
           <h3 className="mb-4">Standorte der Bauernhöfe</h3>
           <p className="mb-4">
-            Sehen Sie, wo sich alle unsere Landwirte in Österreich befinden
+            Sehen Sie, wo sich alle unsere Produzenten in Österreich befinden
           </p>
           <div className="h-96 rounded-lg overflow-hidden relative z-40">
             <MapComponent farmers={farmers} mode="farmers" />

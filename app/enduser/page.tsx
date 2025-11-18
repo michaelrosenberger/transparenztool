@@ -61,7 +61,7 @@ export default function EnduserPage() {
               <h2 className="mb-4">Mahlzeit QR-Code scannen</h2>
               <p className="mb-6">
                 Scannen Sie den QR-Code auf Ihrer Mahlzeitverpackung, um detaillierte Informationen über die Zutaten, 
-                die Landwirte, die das Gemüse angebaut haben, und die Reise vom Bauernhof bis zu Ihrem Tisch zu erfahren.
+                die Produzenten, die die Zutaten angebaut haben, und die Reise vom Bauernhof bis zu Ihrem Tisch zu erfahren.
               </p>
               <Button 
                 onClick={() => router.push("/enduser/scan")}

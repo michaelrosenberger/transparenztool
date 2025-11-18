@@ -21,6 +21,7 @@ import {
 interface Order {
   id: string;
   order_number: string;
+  user_id: string;
   farmer_name: string;
   status: string;
   items: Array<{ vegetable: string; quantity: number }>;
@@ -149,11 +150,11 @@ export default function AcceptedOrdersPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Bestellnummer</TableHead>
-                    <TableHead>Landwirt</TableHead>
+                    <TableHead>Produzent</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Artikel</TableHead>
                     <TableHead>Gesamtmenge</TableHead>
-                    <TableHead className="hidden md:table-cell">Gemüse</TableHead>
+                    <TableHead className="hidden md:table-cell">Zutaten</TableHead>
                     <TableHead>Akzeptiert</TableHead>
                     <TableHead className="text-right">Aktionen</TableHead>
                   </TableRow>

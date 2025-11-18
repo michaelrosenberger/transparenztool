@@ -49,7 +49,19 @@ interface Meal {
   description: string;
   ingredients: Ingredient[];
   vegetables: VegetableSource[];
-  prepared_date: string;
+  storage_address: string;
+  storage_lat: number;
+  storage_lng: number;
+  created_at: string;
+  prepared_date?: string;
+}
+
+interface FarmerProfile {
+  user_id: string;
+  full_name: string;
+  business_images?: string[];
+  featured_image_index?: number;
+  profile_image?: string;
 }
 
 export default function MealDetailPage() {
@@ -57,6 +69,7 @@ export default function MealDetailPage() {
   const [loading, setLoading] = useState(true);
   const [meal, setMeal] = useState<Meal | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [farmerProfiles, setFarmerProfiles] = useState<Map<string, FarmerProfile>>(new Map());
   
   const router = useRouter();
   const params = useParams();
@@ -157,12 +170,49 @@ export default function MealDetailPage() {
             distance: 6.3
           }
         ],
+        storage_address: "Storage Facility, Herzogenburg",
+        storage_lat: 48.28623854975886,
+        storage_lng: 15.690691967244055,
+        created_at: new Date().toISOString(),
         prepared_date: new Date().toISOString()
       };
 
       setMeal(mockMeal);
+      
+      // Load farmer profiles for all farmers in this meal
+      if (mockMeal?.vegetables) {
+        await loadFarmerProfiles(mockMeal.vegetables);
+      }
     } catch (error) {
       console.error("Error loading meal:", error);
+    }
+  };
+
+  const loadFarmerProfiles = async (vegetables: VegetableSource[]) => {
+    try {
+      // Get all farmer profiles
+      const { data, error } = await supabase.rpc("get_farmer_profiles");
+      
+      if (error) {
+        console.error("Error loading farmer profiles:", error);
+        return;
+      }
+
+      // Create a map of farmer name to profile
+      const profileMap = new Map<string, FarmerProfile>();
+      (data || []).forEach((farmer: any) => {
+        profileMap.set(farmer.full_name, {
+          user_id: farmer.user_id,
+          full_name: farmer.full_name,
+          business_images: farmer.business_images || [],
+          featured_image_index: farmer.featured_image_index || 0,
+          profile_image: farmer.profile_image,
+        });
+      });
+
+      setFarmerProfiles(profileMap);
+    } catch (error) {
+      console.error("Error loading farmer profiles:", error);
     }
   };
 
@@ -264,7 +314,7 @@ export default function MealDetailPage() {
         <div 
           id="ingredients-section"
           className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
-          <h2 className="mb-8">Gemüsequellen</h2>
+          <h2 className="mb-8">Zutatenherkünfte</h2>
           <div className="space-y-3">
             {meal.vegetables.map((veg, index) => (
               <button
@@ -334,20 +384,34 @@ export default function MealDetailPage() {
               .filter(v => v.farmer === veg.farmer)
               .map(v => v.vegetable);
 
-            return (
+            // Get farmer profile for images
+            const farmerProfile = farmerProfiles.get(farmerName);
+            const featuredImage = farmerProfile?.business_images && farmerProfile.business_images.length > 0
+              ? farmerProfile.business_images[farmerProfile.featured_image_index || 0]
+              : farmerProfile?.profile_image;
+
+            const cardContent = (
               <Card 
-                key={index}
+                className={farmerProfile?.user_id ? "cursor-pointer hover:shadow-lg transition-shadow h-full" : ""}
                 id={`farmer-${farmerName.replace(/\s+/g, '-').toLowerCase()}`}
               >
-                {/* Profile Image */}
+                {/* Featured Business Image */}
                 <div className="aspect-video bg-gray-100 relative overflow-hidden rounded-lg mb-4">
-                  <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                    <Avatar className="h-24 w-24">
-                      <AvatarFallback className="text-3xl">
-                        {farmerName.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
+                  {featuredImage ? (
+                    <img
+                      src={featuredImage}
+                      alt={farmerName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                      <Avatar className="h-24 w-24">
+                        <AvatarFallback className="text-3xl">
+                          {farmerName.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                  )}
                 </div>
 
                 {/* Farmer Info */}
@@ -370,14 +434,22 @@ export default function MealDetailPage() {
                 )}
               </Card>
             );
+
+            return farmerProfile?.user_id ? (
+              <Link key={index} href={`/produzent/${farmerProfile.user_id}`} className="no-underline">
+                {cardContent}
+              </Link>
+            ) : (
+              <div key={index}>{cardContent}</div>
+            );
           })}
         </div>
 
         <div className="grid gap-8">
           <h2>So funktioniert unser Versprechen:</h2>
-          <p>Wir vermarkten Lebensmittel von Landwirten direkt an Küchen.</p>
+          <p>Wir vermarkten Lebensmittel von Produzenten direkt an Küchen.</p>
           <p>jazunah.at ist das Bindeglied zwischen der Landwirtschaft und Großküchen in Österreich. Die Produzenten bestimmen die Preise ihrer hochwertigen Erzeugnisse selbst – wir kümmern uns um den Weg vom Feld in die Küche. Für Köche bedeutet das: Frische, erstklassige Zutaten, welche die regionale Wirtschaft stärken und  den Geschmack der Region auf den Teller bringen. </p>
-          <i>Für Landwirte, für Köche, für uns alle.</i>
+          <i>Für Produzenten, für Köche, für uns alle.</i>
         </div>
       </Container>
     </>

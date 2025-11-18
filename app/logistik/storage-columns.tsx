@@ -19,7 +19,7 @@ export const columns: ColumnDef<StorageItem>[] = [
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="hover:bg-transparent px-0"
         >
-          Gemüse
+          Zutat
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );

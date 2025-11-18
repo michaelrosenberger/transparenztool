@@ -1,0 +1,652 @@
+"use client";
+
+import { useState, useEffect, useMemo } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
+import Card from "@/app/components/Card";
+import Container from "@/app/components/Container";
+import PageSkeleton from "@/app/components/PageSkeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { X } from "lucide-react";
+
+interface FarmerProfile {
+  id: string;
+  full_name: string;
+  vegetables: string[];
+  address: string;
+  lat: number;
+  lng: number;
+}
+
+interface Ingredient {
+  id: string;
+  name: string;
+  image_url: string | null;
+  is_available: boolean;
+}
+
+interface SelectedVegetable {
+  vegetable: string;
+  farmer_id: string;
+  farmer_name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  image_url?: string;
+}
+
+export default function AdminMealsPage() {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [farmers, setFarmers] = useState<FarmerProfile[]>([]);
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [mealName, setMealName] = useState("");
+  const [mealDescription, setMealDescription] = useState("");
+  const [storageAddress, setStorageAddress] = useState("Storage Facility, Herzogenburg");
+  const [storageLat, setStorageLat] = useState(48.28623854975886);
+  const [storageLng, setStorageLng] = useState(15.690691967244055);
+  const [addressValidating, setAddressValidating] = useState(false);
+  const [addressStatus, setAddressStatus] = useState<"valid" | "invalid" | null>(null);
+  const [selectedVegetables, setSelectedVegetables] = useState<SelectedVegetable[]>([]);
+  const [selectedFarmer, setSelectedFarmer] = useState<string>("");
+  const [selectedVegetable, setSelectedVegetable] = useState<string>("");
+  const [vegetableAddress, setVegetableAddress] = useState<string>("");
+  const [vegetableAddressValidating, setVegetableAddressValidating] = useState(false);
+  const [vegetableAddressStatus, setVegetableAddressStatus] = useState<"valid" | "invalid" | null>(null);
+  const [vegetableAddressCoords, setVegetableAddressCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [isNewFarmer, setIsNewFarmer] = useState(false);
+  const [newFarmerName, setNewFarmerName] = useState<string>("");
+  const [newVegetableName, setNewVegetableName] = useState<string>("");
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [createdMealId, setCreatedMealId] = useState<string | null>(null);
+  
+  const router = useRouter();
+  const supabase = useMemo(() => createClient(), []);
+
+  useEffect(() => {
+    const checkUserAndLoadData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      const isAdmin = user.user_metadata?.is_admin;
+      if (!isAdmin) {
+        router.push("/");
+        return;
+      }
+
+      setUser(user);
+      await loadFarmers();
+      await loadIngredients();
+      setLoading(false);
+    };
+
+    checkUserAndLoadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const loadIngredients = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("ingredients")
+        .select("*")
+        .eq("is_available", true)
+        .order("name");
+
+      if (error) throw error;
+      setIngredients(data || []);
+    } catch (error: any) {
+      console.error("Error loading ingredients:", error);
+    }
+  };
+
+  const loadFarmers = async () => {
+    try {
+      // Get auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setMessage({ type: "error", text: "Nicht angemeldet" });
+        return;
+      }
+
+      // Call API route to get farmers (requires admin privileges)
+      const response = await fetch("/api/admin/farmers", {
+        headers: {
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Fehler beim Laden der Produzenten");
+      }
+
+      const { farmers: farmersWithVegetables } = await response.json();
+      setFarmers(farmersWithVegetables);
+      
+      if (farmersWithVegetables.length === 0) {
+        setMessage({ type: "error", text: "Keine Produzenten mit Zutaten gefunden. Bitte fügen Sie in den Profilen Zutaten und eine Adresse hinzu." });
+      }
+    } catch (error: any) {
+      console.error("Error loading farmers:", error);
+      setMessage({ type: "error", text: error.message || "Fehler beim Laden der Produzenten" });
+    }
+  };
+
+  const validateAddress = async (address: string) => {
+    if (!address.trim()) {
+      setAddressStatus(null);
+      return;
+    }
+
+    setAddressValidating(true);
+    setAddressStatus(null);
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
+      );
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        setStorageLat(parseFloat(data[0].lat));
+        setStorageLng(parseFloat(data[0].lon));
+        setAddressStatus("valid");
+      } else {
+        setAddressStatus("invalid");
+      }
+    } catch (error) {
+      console.error("Address validation error:", error);
+      setAddressStatus("invalid");
+    } finally {
+      setAddressValidating(false);
+    }
+  };
+
+  const handleAddressBlur = () => {
+    validateAddress(storageAddress);
+  };
+
+  const validateVegetableAddress = async (address: string) => {
+    if (!address.trim()) {
+      setVegetableAddressStatus(null);
+      return null;
+    }
+
+    setVegetableAddressValidating(true);
+    setVegetableAddressStatus(null);
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
+      );
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        const coords = {
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon),
+        };
+        setVegetableAddressCoords(coords);
+        setVegetableAddressStatus("valid");
+        return coords;
+      } else {
+        setVegetableAddressStatus("invalid");
+        return null;
+      }
+    } catch (error) {
+      console.error("Address validation error:", error);
+      setVegetableAddressStatus("invalid");
+      return null;
+    } finally {
+      setVegetableAddressValidating(false);
+    }
+  };
+
+  const handleVegetableAddressBlur = () => {
+    validateVegetableAddress(vegetableAddress);
+  };
+
+  const addVegetable = async () => {
+    // Validate based on whether it's a new farmer or existing
+    if (isNewFarmer) {
+      if (!newFarmerName.trim()) {
+        setMessage({ type: "error", text: "Bitte geben Sie einen Namen für den neuen Produzent ein" });
+        return;
+      }
+      if (!newVegetableName.trim()) {
+        setMessage({ type: "error", text: "Bitte geben Sie einen Namen für die Zutat ein" });
+        return;
+      }
+    } else {
+      if (!selectedFarmer || !selectedVegetable) {
+        setMessage({ type: "error", text: "Bitte wählen Sie einen Produzent und eine Zutat aus" });
+        return;
+      }
+    }
+
+    if (!vegetableAddress.trim()) {
+      setMessage({ type: "error", text: "Bitte geben Sie eine Adresse ein" });
+      return;
+    }
+
+    // Validate address
+    const coords = await validateVegetableAddress(vegetableAddress);
+    if (!coords) {
+      setMessage({ type: "error", text: "Bitte geben Sie eine gültige Adresse ein" });
+      return;
+    }
+
+    if (isNewFarmer) {
+      // Find ingredient image for new vegetable
+      const ingredient = ingredients.find(ing => ing.name === newVegetableName);
+      
+      // Add new farmer entry
+      const newEntry: SelectedVegetable = {
+        vegetable: newVegetableName,
+        farmer_id: `new_${Date.now()}`, // Temporary ID for new farmer
+        farmer_name: newFarmerName,
+        address: vegetableAddress,
+        lat: coords.lat,
+        lng: coords.lng,
+        image_url: ingredient?.image_url || undefined,
+      };
+
+      setSelectedVegetables([...selectedVegetables, newEntry]);
+      
+      // Reset new farmer fields
+      setNewFarmerName("");
+      setNewVegetableName("");
+    } else {
+      const farmer = farmers.find(f => f.id === selectedFarmer);
+      if (!farmer) return;
+
+      // Check if this combination already exists
+      const exists = selectedVegetables.some(
+        v => v.vegetable === selectedVegetable && v.farmer_id === selectedFarmer && v.address === vegetableAddress
+      );
+
+      if (exists) {
+        setMessage({ type: "error", text: "Diese Kombination wurde bereits hinzugefügt" });
+        return;
+      }
+
+      // Find ingredient image
+      const ingredient = ingredients.find(ing => ing.name === selectedVegetable);
+
+      setSelectedVegetables([
+        ...selectedVegetables,
+        {
+          vegetable: selectedVegetable,
+          farmer_id: selectedFarmer,
+          farmer_name: farmer.full_name,
+          address: vegetableAddress,
+          lat: coords.lat,
+          lng: coords.lng,
+          image_url: ingredient?.image_url || undefined,
+        },
+      ]);
+
+      setSelectedVegetable("");
+    }
+
+    // Reset address fields
+    setVegetableAddress("");
+    setVegetableAddressStatus(null);
+    setVegetableAddressCoords(null);
+  };
+
+  const removeVegetable = (index: number) => {
+    setSelectedVegetables(selectedVegetables.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async () => {
+    if (!mealName.trim()) {
+      setMessage({ type: "error", text: "Bitte geben Sie einen Namen für die Mahlzeit ein" });
+      return;
+    }
+
+    if (!mealDescription.trim()) {
+      setMessage({ type: "error", text: "Bitte geben Sie eine Beschreibung ein" });
+      return;
+    }
+
+    if (selectedVegetables.length === 0) {
+      setMessage({ type: "error", text: "Bitte fügen Sie mindestens eine Zutat hinzu" });
+      return;
+    }
+
+    if (addressStatus !== "valid") {
+      setMessage({ type: "error", text: "Bitte geben Sie eine gültige Lageradresse ein" });
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      // Create meal with vegetables
+      const mealData = {
+        name: mealName,
+        description: mealDescription,
+        storage_address: storageAddress,
+        storage_lat: storageLat,
+        storage_lng: storageLng,
+        vegetables: selectedVegetables,
+        created_by: user.id,
+        created_at: new Date().toISOString(),
+      };
+
+      const { data, error } = await supabase
+        .from("meals")
+        .insert([mealData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCreatedMealId(data.id);
+      setMessage({ type: "success", text: "Mahlzeit erfolgreich erstellt!" });
+    } catch (error: any) {
+      console.error("Error creating meal:", error);
+      setMessage({ type: "error", text: error.message || "Fehler beim Erstellen der Mahlzeit" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const getAvailableVegetables = () => {
+    if (!selectedFarmer) return [];
+    const farmer = farmers.find(f => f.id === selectedFarmer);
+    return farmer?.vegetables || [];
+  };
+
+  const handleFarmerChange = (farmerId: string) => {
+    setSelectedFarmer(farmerId);
+    setSelectedVegetable("");
+    
+    // Auto-fill address from selected farmer
+    const farmer = farmers.find(f => f.id === farmerId);
+    if (farmer) {
+      setVegetableAddress(farmer.address);
+      setVegetableAddressCoords({ lat: farmer.lat, lng: farmer.lng });
+      setVegetableAddressStatus("valid");
+    }
+  };
+
+  const handleNewFarmerToggle = (checked: boolean) => {
+    setIsNewFarmer(checked);
+    if (checked) {
+      // Clear existing farmer selection
+      setSelectedFarmer("");
+      setSelectedVegetable("");
+      setVegetableAddress("");
+      setVegetableAddressStatus(null);
+      setVegetableAddressCoords(null);
+    }
+  };
+
+  if (loading) {
+    return <PageSkeleton />;
+  }
+
+  return (
+    <>
+      <Container dark fullWidth>
+        <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+          <div>
+            <h1>Mahlzeiten erstellen</h1>
+            <p>Neue Mahlzeit mit Zutaten und Produzenten erstellen</p>
+          </div>
+        </div>
+      </Container>
+
+      <Container asPage>
+        <AlertDialog open={!!message} onOpenChange={() => setMessage(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {message?.type === "success" ? "Erfolg" : "Fehler"}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {message?.text}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogAction onClick={() => {
+              setMessage(null);
+              if (createdMealId) {
+                router.push(`/admin/meals/${createdMealId}`);
+              }
+            }}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <Card className="mb-6">
+          <h3 className="mb-4">Mahlzeit-Details</h3>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="meal-name">Name der Mahlzeit</Label>
+              <Input
+                id="meal-name"
+                value={mealName}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMealName(e.target.value)}
+                placeholder="z.B. Gemüsepfanne mit Karotten und Kartoffeln"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="meal-description">Beschreibung</Label>
+              <Textarea
+                id="meal-description"
+                value={mealDescription}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setMealDescription(e.target.value)}
+                placeholder="Kurze Beschreibung der Mahlzeit"
+                rows={3}
+              />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="mb-6">
+          <h3 className="mb-4">Lageradresse</h3>
+          
+          <div className="space-y-2">
+            <Label htmlFor="storage-address">Adresse</Label>
+            <Input
+              id="storage-address"
+              value={storageAddress}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStorageAddress(e.target.value)}
+              onBlur={handleAddressBlur}
+              placeholder="Lageradresse eingeben"
+            />
+            {addressValidating && (
+              <p className="text-sm text-gray-500">Adresse wird validiert...</p>
+            )}
+            {addressStatus === "valid" && (
+              <p className="text-sm text-green-600">✓ Adresse validiert</p>
+            )}
+            {addressStatus === "invalid" && (
+              <p className="text-sm text-red-600">✗ Adresse nicht gefunden</p>
+            )}
+          </div>
+        </Card>
+
+        <Card className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3>Zutaten hinzufügen</h3>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="new-farmer"
+                checked={isNewFarmer}
+                onCheckedChange={handleNewFarmerToggle}
+              />
+              <Label htmlFor="new-farmer" className="text-sm cursor-pointer">
+                Neuer Produzent
+              </Label>
+            </div>
+          </div>
+          
+          {!isNewFarmer ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="space-y-2">
+                <Label>Produzent</Label>
+                <Select value={selectedFarmer} onValueChange={handleFarmerChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Produzent wählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {farmers.map((farmer) => (
+                      <SelectItem key={farmer.id} value={farmer.id}>
+                        {farmer.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Zutat</Label>
+                <Select 
+                  value={selectedVegetable} 
+                  onValueChange={setSelectedVegetable}
+                  disabled={!selectedFarmer}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Zutat wählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getAvailableVegetables().map((veg) => (
+                      <SelectItem key={veg} value={veg}>
+                        {veg}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-farmer-name">Name des Produzenten</Label>
+                <Input
+                  id="new-farmer-name"
+                  value={newFarmerName}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewFarmerName(e.target.value)}
+                  placeholder="z.B. Max Mustermann"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="new-vegetable-name">Zutat</Label>
+                <Input
+                  id="new-vegetable-name"
+                  value={newVegetableName}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewVegetableName(e.target.value)}
+                  placeholder="z.B. Karotten"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2 mb-4">
+            <Label htmlFor="vegetable-address">Adresse</Label>
+            <Input
+              id="vegetable-address"
+              value={vegetableAddress}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setVegetableAddress(e.target.value)}
+              onBlur={handleVegetableAddressBlur}
+              placeholder="Adresse des Produzenten"
+            />
+            {vegetableAddressValidating && (
+              <p className="text-sm text-gray-500">Adresse wird validiert...</p>
+            )}
+            {vegetableAddressStatus === "valid" && (
+              <p className="text-sm text-green-600">✓ Adresse validiert</p>
+            )}
+            {vegetableAddressStatus === "invalid" && (
+              <p className="text-sm text-red-600">✗ Adresse nicht gefunden</p>
+            )}
+          </div>
+
+          <Button
+            onClick={addVegetable}
+            className="w-full"
+            disabled={isNewFarmer ? (!newFarmerName || !newVegetableName || !vegetableAddress) : (!selectedFarmer || !selectedVegetable || !vegetableAddress)}
+          >
+            Hinzufügen
+          </Button>
+
+          {selectedVegetables.length > 0 && (
+            <div className="space-y-2 mt-6">
+              <Label>Ausgewählte Zutaten</Label>
+              <div className="space-y-2">
+                {selectedVegetables.map((item, index) => (
+                  <div key={index} className="flex items-start justify-between p-3 bg-gray-50 rounded-md border border-gray-200">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge variant="secondary">{item.vegetable}</Badge>
+                        <span className="text-sm font-medium">{item.farmer_name}</span>
+                      </div>
+                      <p className="text-sm text-gray-600">{item.address}</p>
+                    </div>
+                    <button
+                      onClick={() => removeVegetable(index)}
+                      className="text-gray-400 hover:text-destructive p-1"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </Card>
+
+        <div className="flex gap-4">
+          <Button
+            onClick={handleSubmit}
+            disabled={submitting}
+            size="lg"
+            className="flex-1"
+          >
+            {submitting ? "Wird erstellt..." : "Mahlzeit erstellen"}
+          </Button>
+          <Button
+            onClick={() => router.push("/admin")}
+            variant="outline"
+            size="lg"
+            className="flex-1"
+          >
+            Abbrechen
+          </Button>
+        </div>
+      </Container>
+    </>
+  );
+}

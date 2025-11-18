@@ -68,7 +68,7 @@ export default function NewOrderPage() {
       }
 
       const occupation = user.user_metadata?.occupation;
-      if (occupation !== "Farmer") {
+      if (occupation !== "Produzenten") {
         router.push("/");
         return;
       }
@@ -183,7 +183,8 @@ export default function NewOrderPage() {
     setMessage(null);
 
     try {
-      const farmerName = user.user_metadata?.full_name || user.email;
+      // Use business name if available, otherwise fall back to full name or email
+      const farmerName = user.user_metadata?.business_name || user.user_metadata?.full_name || user.email;
 
       const { error } = await supabase
         .from("orders")
@@ -201,7 +202,7 @@ export default function NewOrderPage() {
       
       // Redirect to orders list after 2 seconds
       setTimeout(() => {
-        router.push("/farmer/orders");
+        router.push("/produzenten/orders");
       }, 2000);
     } catch (error: any) {
       setMessage({ type: "error", text: error.message || "Bestellung konnte nicht erstellt werden" });
@@ -220,7 +221,7 @@ export default function NewOrderPage() {
         <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div>
             <h1>Neue Bestellung erstellen</h1>
-            <p>Neue Gemüsebestellung zur Lieferung einreichen</p>
+            <p>Neue Zutatenbestellung zur Lieferung einreichen</p>
           </div>
         </div>
       </Container>
@@ -246,16 +247,16 @@ export default function NewOrderPage() {
         <Card className="mb-6">
           <div className="mb-4">
             <h3 className="mb-2">{orderNumber}</h3>
-            <p>Landwirt: {user?.user_metadata?.full_name || "Unbekannt"}</p>
+            <p>Produzent: {user?.user_metadata?.business_name || user?.user_metadata?.full_name || user?.email}</p>
           </div>
         </Card>
 
         <Card className="mb-6">
-          <h3 className="mb-4">Gemüse hinzufügen</h3>
+          <h3 className="mb-4">Zutaten hinzufügen</h3>
           
           {availableVegetables.length === 0 ? (
             <div className="text-center py-8">
-              <p className="mb-4">Keine Gemüsesorten in Ihrem Profil konfiguriert.</p>
+              <p className="mb-4">Keine Zutaten in Ihrem Profil konfiguriert.</p>
               <Button
                 onClick={() => router.push("/profile")}
                 variant="outline"
@@ -266,7 +267,7 @@ export default function NewOrderPage() {
           ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
             <div className="space-y-2">
-              <Label>Gemüsefeld</Label>
+              <Label>Zutat</Label>
               <Select
                 value={selectedVegetable}
                 onValueChange={(value) => setSelectedVegetable(value)}
@@ -316,7 +317,7 @@ export default function NewOrderPage() {
 
         {availableVegetables.length > 0 && (
         <Card className="mb-6">
-          <h3 className="mb-4">Gemüse schnell hinzufügen</h3>
+          <h3 className="mb-4">Zutaten schnell hinzufügen</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {availableVegetables.map((veg) => (
               <Button
@@ -337,7 +338,7 @@ export default function NewOrderPage() {
           
           {items.length === 0 ? (
             <p className="text-center py-8">
-              Noch keine Artikel hinzugefügt. Fügen Sie oben Gemüse zu Ihrer Bestellung hinzu.
+              Noch keine Artikel hinzugefügt. Fügen Sie oben Zutaten zu Ihrer Bestellung hinzu.
             </p>
           ) : (
             <div className="space-y-3">
@@ -395,7 +396,7 @@ export default function NewOrderPage() {
             {submitting ? "Bestellung wird erstellt..." : "Bestellung erstellen"}
           </Button>
           <Button
-            onClick={() => router.push("/farmer")}
+            onClick={() => router.push("/produzenten")}
             variant="outline"
             size="lg"
             className="flex-1"

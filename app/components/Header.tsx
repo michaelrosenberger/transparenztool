@@ -14,10 +14,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export default function Header() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
 
@@ -26,6 +29,7 @@ export default function Header() {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
+      setIsAdmin(user?.user_metadata?.is_admin || false);
       setLoading(false);
     };
 
@@ -34,6 +38,7 @@ export default function Header() {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      setIsAdmin(session?.user?.user_metadata?.is_admin || false);
     });
 
     return () => subscription.unsubscribe();
@@ -44,6 +49,20 @@ export default function Header() {
     await supabase.auth.signOut();
     router.push("/");
     router.refresh();
+  };
+
+  const toggleAdmin = async () => {
+    if (!user) return;
+    
+    const newAdminState = !isAdmin;
+    const { error } = await supabase.auth.updateUser({
+      data: { is_admin: newAdminState }
+    });
+    
+    if (!error) {
+      setIsAdmin(newAdminState);
+      router.refresh();
+    }
   };
 
   const fullName = user?.user_metadata?.full_name;
@@ -61,7 +80,21 @@ export default function Header() {
             />
           </Link>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
+            {/* Admin Toggle - Only show when logged in */}
+            {user && (
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="admin-mode"
+                  checked={isAdmin}
+                  onCheckedChange={toggleAdmin}
+                />
+                <Label htmlFor="admin-mode" className="text-sm cursor-pointer">
+                  Admin
+                </Label>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
             {/* User Icon - Always visible, links to profile or login */}
             {!loading && (
               <Link
@@ -164,6 +197,7 @@ export default function Header() {
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
+            </div>
           </div>
         </div>
       </div>

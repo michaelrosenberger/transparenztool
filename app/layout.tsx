@@ -3,6 +3,8 @@ import "./globals.css";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import { Toaster } from "@/components/ui/sonner";
+import { headers } from "next/headers";
+//import DynamicBreadcrumbs from "./components/DynamicBreadcrumbs";
 
 export const metadata: Metadata = {
   title: "Transparenztool",
@@ -25,11 +27,15 @@ export const viewport = {
   themeColor: "#000000",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") || "";
+  const isPresentationMode = pathname.includes("/presentation");
+
   return (
     <html lang="en">
       <head>
@@ -39,11 +45,11 @@ export default function RootLayout({
         className="antialiased tracking-wide"
         suppressHydrationWarning
       >
-        <Header />
-        <div className="pt-0">
+        {!isPresentationMode && <Header />}
+        <div className={isPresentationMode ? "" : "pt-0"}>
           {children}
         </div>
-        <Footer />
+        {!isPresentationMode && <Footer />}
         <Toaster />
       </body>
     </html>

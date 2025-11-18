@@ -44,7 +44,7 @@ export default function OrdersListPage() {
       }
 
       const occupation = user.user_metadata?.occupation;
-      if (occupation !== "Farmer") {
+      if (occupation !== "Produzenten") {
         router.push("/");
         return;
       }
@@ -128,7 +128,7 @@ export default function OrdersListPage() {
         <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div>
             <h1>Meine Bestellungen</h1>
-            <p>Verwalten und verfolgen Sie alle Ihre Gemüsebestellungen</p>
+            <p>Verwalten und verfolgen Sie alle Ihre Zutatenbestellungen</p>
           </div>
         </div>
       </Container>
@@ -140,7 +140,7 @@ export default function OrdersListPage() {
             <div className="text-center py-12">
               <p className="mb-4">Noch keine Bestellungen</p>
               <Button asChild size="lg">
-                <Link href="/farmer/orders/new">
+                <Link href="/produzenten/orders/new">
                   Erste Bestellung erstellen
                 </Link>
               </Button>
@@ -157,7 +157,7 @@ export default function OrdersListPage() {
                     <TableHead>Status</TableHead>
                     <TableHead>Artikel</TableHead>
                     <TableHead>Gesamtmenge</TableHead>
-                    <TableHead className="hidden md:table-cell">Gemüse</TableHead>
+                    <TableHead className="hidden md:table-cell">Zutaten</TableHead>
                     <TableHead>Erstellt</TableHead>
                     <TableHead className="text-right">Aktionen</TableHead>
                   </TableRow>
@@ -183,7 +183,7 @@ export default function OrdersListPage() {
                       </TableCell>
                       <TableCell className="text-right pr-0">
                         <Button asChild variant="ghost" size="sm">
-                          <Link href={`/farmer/orders/${order.id}`}>
+                          <Link href={`/produzenten/orders/${order.id}`}>
                             Details →
                           </Link>
                         </Button>

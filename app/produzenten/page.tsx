@@ -24,7 +24,7 @@ export default function FarmerPage() {
       }
 
       const occupation = user.user_metadata?.occupation;
-      if (occupation !== "Farmer") {
+      if (occupation !== "Produzenten") {
         router.push("/");
         return;
       }
@@ -41,7 +41,7 @@ export default function FarmerPage() {
     return <PageSkeleton />;
   }
 
-  const fullName = user?.user_metadata?.full_name || "Landwirt";
+  const fullName = user?.user_metadata?.full_name || "Produzent";
 
   return (
     <>
@@ -49,12 +49,31 @@ export default function FarmerPage() {
         <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div>
             <h1>Willkommen, {fullName}!</h1>
-            <p>Ihr Landwirt-Dashboard</p>
+            <p>Ihr Produzenten-Dashboard</p>
           </div>
         </div>
       </Container>
 
       <Container asPage>
+
+        {/* Business Profile Section */}
+        <Card className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2>Geschäftsprofil</h2>
+          </div>
+          <p className="mb-4">
+            Verwalten Sie Ihre Geschäftsinformationen, Adresse, Produktsortiment und Bilder. 
+            Diese Informationen werden auf der öffentlichen Produzentenliste angezeigt.
+          </p>
+          <Button
+            onClick={() => router.push("/produzenten/business")}
+            variant="outline"
+            size="lg"
+            className="w-full sm:w-auto"
+          >
+            Geschäftsprofil bearbeiten
+          </Button>
+        </Card>
 
         {/* Order Management Section */}
         <Card className="mb-6">
@@ -62,19 +81,19 @@ export default function FarmerPage() {
             <h2>Bestellverwaltung</h2>
           </div>
           <p className="mb-4">
-            Erstellen und verwalten Sie Ihre Gemüsebestellungen. Verfolgen Sie den Bestellstatus von der Ankündigung 
+            Erstellen und verwalten Sie Ihre Zutatenbestellungen. Verfolgen Sie den Bestellstatus von der Ankündigung 
             bis zur Lieferung und Lagerung.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <Button
-              onClick={() => router.push("/farmer/orders/new")}
+              onClick={() => router.push("/produzenten/orders/new")}
               size="lg"
               className="w-full sm:w-auto"
             >
               + Neue Bestellung erstellen
             </Button>
             <Button
-              onClick={() => router.push("/farmer/orders")}
+              onClick={() => router.push("/produzenten/orders")}
               variant="outline"
               size="lg"
               className="w-full sm:w-auto"

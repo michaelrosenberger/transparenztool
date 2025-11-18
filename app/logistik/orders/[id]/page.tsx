@@ -22,6 +22,7 @@ import { columns } from "../order-items-columns";
 interface Order {
   id: string;
   order_number: string;
+  user_id: string;
   farmer_name: string;
   status: string;
   items: Array<{ vegetable: string; quantity: number }>;
@@ -33,6 +34,7 @@ export default function LogistikOrderDetailPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState<Order | null>(null);
+  const [farmerDisplayName, setFarmerDisplayName] = useState<string>("");
   const [accepting, setAccepting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -76,9 +78,40 @@ export default function LogistikOrderDetailPage() {
 
       if (error) throw error;
       setOrder(data);
+      
+      // Fetch the farmer's current business name
+      if (data.user_id) {
+        await loadFarmerName(data.user_id);
+      }
     } catch (error) {
       console.error("Error loading order:", error);
       setMessage({ type: "error", text: "Bestellung nicht gefunden" });
+    }
+  };
+
+  const loadFarmerName = async (userId: string) => {
+    try {
+      // Use admin API to get user metadata
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const response = await fetch(`/api/admin/user/${userId}`, {
+        headers: {
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (response.ok) {
+        const { user: farmerUser } = await response.json();
+        const displayName = farmerUser.user_metadata?.business_name || 
+                          farmerUser.user_metadata?.full_name || 
+                          farmerUser.email;
+        setFarmerDisplayName(displayName);
+      }
+    } catch (error) {
+      console.error("Error loading farmer name:", error);
+      // Fall back to stored farmer_name if fetch fails
+      setFarmerDisplayName(order?.farmer_name || "Unbekannt");
     }
   };
 
@@ -228,7 +261,7 @@ export default function LogistikOrderDetailPage() {
                   {getStatusLabel(order.status)}
                 </Badge>
               </div>
-              <p>Landwirt: {order.farmer_name}</p>
+              <p>Produzent: {farmerDisplayName || order.farmer_name}</p>
             </div>
           
           </div>

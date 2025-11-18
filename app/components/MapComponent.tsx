@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Circle, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -22,6 +22,7 @@ interface VegetableSource {
     address: string;
   };
   distance: number;
+  image_url?: string;
 }
 
 interface FarmerProfile {
@@ -108,14 +109,60 @@ export default function MapComponent({
   mode = 'meal',
   dark = false
 }: MapComponentProps) {
+  // State for storing route coordinates
+  const [routes, setRoutes] = useState<{
+    [key: string]: [number, number][];
+  }>({});
+
+  // Fetch route from OSRM API
+  const fetchRoute = async (start: [number, number], end: [number, number], routeKey: string) => {
+    try {
+      const response = await fetch(
+        `https://router.project-osrm.org/route/v1/driving/${start[1]},${start[0]};${end[1]},${end[0]}?overview=full&geometries=geojson`
+      );
+      const data = await response.json();
+      
+      if (data.routes && data.routes[0]) {
+        const coordinates = data.routes[0].geometry.coordinates.map(
+          (coord: [number, number]) => [coord[1], coord[0]] as [number, number]
+        );
+        setRoutes(prev => ({ ...prev, [routeKey]: coordinates }));
+      }
+    } catch (error) {
+      console.error('Error fetching route:', error);
+      // Fallback to straight line if routing fails
+      setRoutes(prev => ({ ...prev, [routeKey]: [start, end] }));
+    }
+  };
+
+  // Fetch all routes when component mounts or data changes
+  useEffect(() => {
+    if (mode === 'meal' && storageLocation) {
+      // Fetch routes from each farm to storage
+      vegetables.forEach((veg, index) => {
+        const farmCoords: [number, number] = [veg.location.lat, veg.location.lng];
+        const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
+        fetchRoute(farmCoords, storageCoords, `farm-${index}-storage`);
+      });
+
+      // Fetch route from storage to user location
+      if (userLocation) {
+        const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
+        const userCoords: [number, number] = [userLocation.lat, userLocation.lng];
+        fetchRoute(storageCoords, userCoords, 'storage-user');
+      }
+    }
+  }, [vegetables, userLocation, storageLocation, mode]);
+
   // Create custom SVG icons for farms and user
-  const createCustomIcon = (color: string) => {
+  const createCustomIcon = (color: string, imageUrl?: string) => {
+    const iconImage = imageUrl || '/vegetable-icon.svg';
     const svgIcon = `
       <svg width="40" height="50" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg">
         <path d="M20 0C8.95 0 0 8.95 0 20c0 15 20 30 20 30s20-15 20-30C40 8.95 31.05 0 20 0z" 
               fill="#fff"/>
         <circle cx="20" cy="20" r="16" fill="${color}"/>
-        <image x="10" y="10" width="20" height="20" href="/vegetable-icon.svg" />
+        <image x="10" y="10" width="20" height="20" href="${iconImage}" style="clip-path: circle(10px at center);" />
       </svg>
     `;
     return L.divIcon({
@@ -254,7 +301,7 @@ export default function MapComponent({
       {storageLocation && (
         <Marker position={[storageLocation.lat, storageLocation.lng]} icon={storageIcon}>
           <Popup>
-            <div className="text-center">
+            <div className="text-left">
               <strong>Storage Location</strong>
               <br />
               <span className="text-xs">{storageLocation.address}</span>
@@ -268,7 +315,7 @@ export default function MapComponent({
         <>
           <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}>
             <Popup>
-              <div className="text-center">
+              <div className="text-left">
                 <strong>{mealName || "Your Location"}</strong>
               </div>
             </Popup>
@@ -282,45 +329,44 @@ export default function MapComponent({
       )}
 
       {/* Farm markers and lines */}
-      {vegetables.map((veg, index) => (
-        <div key={index}>
-          <Marker position={[veg.location.lat, veg.location.lng]} icon={farmIcon}>
-            <Popup>
-              <div>
-                <strong>{veg.farmer}</strong>
-                <br />
-                <span>{veg.vegetable}</span>
-                <br />
-                <span className="text-xs">{veg.location.address}</span>
-                <br />
-                <span className="font-medium text-green-700">
-                  {veg.distance} km away
-                </span>
-              </div>
-            </Popup>
-          </Marker>
+      {vegetables.map((veg, index) => {
+        // Create ingredient-specific icon with custom image if available
+        const ingredientIcon = createCustomIcon('orange', veg.image_url);
+        
+        return (
+          <div key={index}>
+            <Marker position={[veg.location.lat, veg.location.lng]} icon={ingredientIcon}>
+              <Popup>
+                <div>
+                  <strong>{veg.farmer}</strong>
+                  <br />
+                  <span>{veg.vegetable}</span>
+                  <br />
+                  <span className="text-xs">{veg.location.address}</span>
+                  <br />
+                  <span className="font-medium text-green-700">
+                    {veg.distance.toFixed(1)} km entfernt
+                  </span>
+                </div>
+              </Popup>
+            </Marker>
 
-          {/* Draw line from farm to storage */}
-          {storageLocation && (
-            <Polyline
-              positions={[
-                [veg.location.lat, veg.location.lng],
-                [storageLocation.lat, storageLocation.lng]
-              ]}
-              pathOptions={{ color: "orange", weight: 2, opacity: 0.6, dashArray: "5, 10" }}
-            />
-          )}
-        </div>
-      ))}
+            {/* Draw route from farm to storage */}
+            {storageLocation && routes[`farm-${index}-storage`] && (
+              <Polyline
+                positions={routes[`farm-${index}-storage`]}
+                pathOptions={{ color: "orange", weight: 3, opacity: 0.7 }}
+              />
+            )}
+          </div>
+        );
+      })}
 
-      {/* Draw line from storage to user location */}
-      {storageLocation && userLocation && (
+      {/* Draw route from storage to user location */}
+      {storageLocation && userLocation && routes['storage-user'] && (
         <Polyline
-          positions={[
-            [storageLocation.lat, storageLocation.lng],
-            [userLocation.lat, userLocation.lng]
-          ]}
-          pathOptions={{ color: "orange", weight: 2, opacity: 0.6, dashArray: "5, 10" }}
+          positions={routes['storage-user']}
+          pathOptions={{ color: "orange", weight: 3, opacity: 0.7 }}
         />
       )}
 

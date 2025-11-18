@@ -21,6 +21,7 @@ import {
 interface Order {
   id: string;
   order_number: string;
+  user_id: string;
   farmer_name: string;
   status: string;
   items: Array<{ vegetable: string; quantity: number }>;
@@ -129,7 +130,7 @@ export default function DeliveredOrdersPage() {
         <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div>
             <h1>Gelieferte Bestellungen</h1>
-            <p>Gelieferte Bestellungen von Landwirten überprüfen und akzeptieren</p>
+            <p>Gelieferte Bestellungen von Produzenten überprüfen und akzeptieren</p>
           </div>
         </div>
       </Container>
@@ -149,11 +150,11 @@ export default function DeliveredOrdersPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Bestellnummer</TableHead>
-                    <TableHead>Landwirt</TableHead>
+                    <TableHead>Produzent</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Artikel</TableHead>
                     <TableHead>Gesamtmenge</TableHead>
-                    <TableHead className="hidden md:table-cell">Gemüse</TableHead>
+                    <TableHead className="hidden md:table-cell">Zutaten</TableHead>
                     <TableHead>Geliefert</TableHead>
                     <TableHead className="text-right">Aktionen</TableHead>
                   </TableRow>

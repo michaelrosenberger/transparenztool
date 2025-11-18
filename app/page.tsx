@@ -33,8 +33,8 @@ function HomeContent() {
         const occupation = user.user_metadata?.occupation;
         
         // Redirect based on occupation
-        if (occupation === "Farmer") {
-          router.push("/farmer");
+        if (occupation === "Produzenten") {
+          router.push("/produzenten");
           return;
         } else if (occupation === "Logistik") {
           router.push("/logistik");

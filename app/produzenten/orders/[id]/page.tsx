@@ -58,7 +58,7 @@ export default function OrderDetailPage() {
       }
 
       const occupation = user.user_metadata?.occupation;
-      if (occupation !== "Farmer") {
+      if (occupation !== "Produzenten") {
         router.push("/");
         return;
       }
@@ -209,7 +209,7 @@ export default function OrderDetailPage() {
               <h3 className="mb-2">
                 {order.order_number}
               </h3>
-              <p>Landwirt: {order.farmer_name}</p>
+              <p>Produzent: {user?.user_metadata?.business_name || user?.user_metadata?.full_name || user?.email}</p>
             </div>
             <Badge variant={getStatusVariant(order.status) as any}>
               {getStatusLabel(order.status)}
@@ -234,7 +234,7 @@ export default function OrderDetailPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[100px]">Nr.</TableHead>
-                <TableHead>Gemüse</TableHead>
+                <TableHead>Zutat</TableHead>
                 <TableHead className="text-right">Menge</TableHead>
               </TableRow>
             </TableHeader>
