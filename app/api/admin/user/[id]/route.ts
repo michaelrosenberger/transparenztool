@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -8,6 +9,14 @@ export async function GET(
   try {
     // Await params in Next.js 15
     const { id } = await params;
+
+    // Use server client to get authenticated user from cookies
+    const supabase = await createServerClient();
+    const { data: { user: requestingUser }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !requestingUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     // Create a Supabase client with service role key for admin operations
     const supabaseAdmin = createClient(
@@ -20,19 +29,6 @@ export async function GET(
         },
       }
     );
-
-    // Verify the requesting user is authenticated
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user: requestingUser }, error: authError } = await supabaseAdmin.auth.getUser(token);
-
-    if (authError || !requestingUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
     // Get the requested user
     const { data, error } = await supabaseAdmin.auth.admin.getUserById(id);

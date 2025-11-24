@@ -63,9 +63,10 @@ export default function AdminMealsPage() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [mealName, setMealName] = useState("");
   const [mealDescription, setMealDescription] = useState("");
-  const [storageAddress, setStorageAddress] = useState("Storage Facility, Herzogenburg");
-  const [storageLat, setStorageLat] = useState(48.28623854975886);
-  const [storageLng, setStorageLng] = useState(15.690691967244055);
+  const [storageName, setStorageName] = useState("");
+  const [storageAddress, setStorageAddress] = useState("");
+  const [storageLat, setStorageLat] = useState(0);
+  const [storageLng, setStorageLng] = useState(0);
   const [addressValidating, setAddressValidating] = useState(false);
   const [addressStatus, setAddressStatus] = useState<"valid" | "invalid" | null>(null);
   const [selectedVegetables, setSelectedVegetables] = useState<SelectedVegetable[]>([]);
@@ -86,23 +87,61 @@ export default function AdminMealsPage() {
 
   useEffect(() => {
     const checkUserAndLoadData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        router.push("/login");
-        return;
-      }
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          router.push("/login");
+          return;
+        }
 
-      const isAdmin = user.user_metadata?.is_admin;
-      if (!isAdmin) {
+        // Check admin role from user_roles table
+        const { data: roleData, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error checking admin role:', error.message);
+          router.push("/");
+          return;
+        }
+
+        if (!roleData) {
+          router.push("/");
+          return;
+        }
+
+        setUser(user);
+        
+        // Load default storage address from admin settings
+        const defaultStorageName = user.user_metadata?.default_storage_name || "";
+        const defaultStorageAddress = user.user_metadata?.default_storage_address || "";
+        
+        if (defaultStorageName) {
+          setStorageName(defaultStorageName);
+        }
+        
+        if (defaultStorageAddress) {
+          setStorageAddress(defaultStorageAddress);
+          // Validate the default address (don't block on error)
+          try {
+            await validateAddress(defaultStorageAddress);
+          } catch (error) {
+            console.error("Error validating default storage address:", error);
+            // Continue loading even if validation fails
+          }
+        }
+        
+        await loadFarmers();
+        await loadIngredients();
+        setLoading(false);
+      } catch (error) {
+        console.error('Error in checkUserAndLoadData:', error);
         router.push("/");
-        return;
       }
-
-      setUser(user);
-      await loadFarmers();
-      await loadIngredients();
-      setLoading(false);
     };
 
     checkUserAndLoadData();
@@ -126,23 +165,20 @@ export default function AdminMealsPage() {
 
   const loadFarmers = async () => {
     try {
-      // Get auth token
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setMessage({ type: "error", text: "Nicht angemeldet" });
-        return;
-      }
-
       // Call API route to get farmers (requires admin privileges)
-      const response = await fetch("/api/admin/farmers", {
-        headers: {
-          "Authorization": `Bearer ${session.access_token}`,
-        },
-      });
+      // Auth is handled via cookies on the server side
+      const response = await fetch("/api/admin/farmers");
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Fehler beim Laden der Produzenten");
+        let errorMessage = "Fehler beim Laden der Produzenten";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          // If JSON parsing fails, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
       const { farmers: farmersWithVegetables } = await response.json();
@@ -168,8 +204,20 @@ export default function AdminMealsPage() {
 
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`,
+        {
+          headers: {
+            'User-Agent': 'TransparenztoolApp/1.0'
+          }
+        }
       );
+      
+      if (!response.ok) {
+        console.error(`Nominatim API error: ${response.status} ${response.statusText}`);
+        setAddressStatus(null);
+        return;
+      }
+      
       const data = await response.json();
 
       if (data && data.length > 0) {
@@ -181,7 +229,9 @@ export default function AdminMealsPage() {
       }
     } catch (error) {
       console.error("Address validation error:", error);
-      setAddressStatus("invalid");
+      // Set status to null instead of invalid for network errors
+      // so user knows it's not validated rather than invalid
+      setAddressStatus(null);
     } finally {
       setAddressValidating(false);
     }
@@ -202,8 +252,20 @@ export default function AdminMealsPage() {
 
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`,
+        {
+          headers: {
+            'User-Agent': 'TransparenztoolApp/1.0'
+          }
+        }
       );
+
+      if (!response.ok) {
+        console.error(`Nominatim API error: ${response.status} ${response.statusText}`);
+        setVegetableAddressStatus(null);
+        return null;
+      }
+
       const data = await response.json();
 
       if (data && data.length > 0) {
@@ -352,6 +414,7 @@ export default function AdminMealsPage() {
       const mealData = {
         name: mealName,
         description: mealDescription,
+        storage_name: storageName,
         storage_address: storageAddress,
         storage_lat: storageLat,
         storage_lng: storageLng,
@@ -476,24 +539,36 @@ export default function AdminMealsPage() {
         <Card className="mb-6">
           <h3 className="mb-4">Lageradresse</h3>
           
-          <div className="space-y-2">
-            <Label htmlFor="storage-address">Adresse</Label>
-            <Input
-              id="storage-address"
-              value={storageAddress}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStorageAddress(e.target.value)}
-              onBlur={handleAddressBlur}
-              placeholder="Lageradresse eingeben"
-            />
-            {addressValidating && (
-              <p className="text-sm text-gray-500">Adresse wird validiert...</p>
-            )}
-            {addressStatus === "valid" && (
-              <p className="text-sm text-green-600">✓ Adresse validiert</p>
-            )}
-            {addressStatus === "invalid" && (
-              <p className="text-sm text-red-600">✗ Adresse nicht gefunden</p>
-            )}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="storage-name">Name des Lagers</Label>
+              <Input
+                id="storage-name"
+                value={storageName}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStorageName(e.target.value)}
+                placeholder="z.B. Hauptlager Wien"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="storage-address">Adresse</Label>
+              <Input
+                id="storage-address"
+                value={storageAddress}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStorageAddress(e.target.value)}
+                onBlur={handleAddressBlur}
+                placeholder="z.B. Musterstraße 123, 1010 Wien"
+              />
+              {addressValidating && (
+                <p className="text-sm text-gray-500">Adresse wird validiert...</p>
+              )}
+              {addressStatus === "valid" && (
+                <p className="text-sm text-green-600">✓ Adresse validiert</p>
+              )}
+              {addressStatus === "invalid" && (
+                <p className="text-sm text-red-600">✗ Adresse nicht gefunden</p>
+              )}
+            </div>
           </div>
         </Card>
 

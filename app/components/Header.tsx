@@ -14,8 +14,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 
 export default function Header() {
   const [user, setUser] = useState<User | null>(null);
@@ -29,16 +27,52 @@ export default function Header() {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
-      setIsAdmin(user?.user_metadata?.is_admin || false);
+      
+      if (user) {
+        // Check admin status from user_roles table
+        const { data: roleData, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
+        
+        if (error) {
+          console.warn('user_roles table not found or error:', error.message);
+          setIsAdmin(false);
+        } else {
+          setIsAdmin(!!roleData);
+        }
+      } else {
+        setIsAdmin(false);
+      }
+      
       setLoading(false);
     };
 
     getUser();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
-      setIsAdmin(session?.user?.user_metadata?.is_admin || false);
+      
+      if (session?.user) {
+        const { data: roleData, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
+        
+        if (error) {
+          console.warn('user_roles table not found or error:', error.message);
+          setIsAdmin(false);
+        } else {
+          setIsAdmin(!!roleData);
+        }
+      } else {
+        setIsAdmin(false);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -51,19 +85,6 @@ export default function Header() {
     router.refresh();
   };
 
-  const toggleAdmin = async () => {
-    if (!user) return;
-    
-    const newAdminState = !isAdmin;
-    const { error } = await supabase.auth.updateUser({
-      data: { is_admin: newAdminState }
-    });
-    
-    if (!error) {
-      setIsAdmin(newAdminState);
-      router.refresh();
-    }
-  };
 
   const fullName = user?.user_metadata?.full_name;
 
@@ -81,20 +102,30 @@ export default function Header() {
           </Link>
 
           <div className="flex items-center gap-4">
-            {/* Admin Toggle - Only show when logged in */}
-            {user && (
-              <div className="flex items-center gap-2">
-                <Switch
-                  id="admin-mode"
-                  checked={isAdmin}
-                  onCheckedChange={toggleAdmin}
-                />
-                <Label htmlFor="admin-mode" className="text-sm cursor-pointer">
-                  Admin
-                </Label>
-              </div>
-            )}
             <div className="flex items-center gap-2">
+            {/* Admin Dashboard Link - Only show for admin users */}
+            {!loading && isAdmin && (
+              <Link
+                href="/admin"
+                className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors text-black"
+                title="Admin Dashboard"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </Link>
+            )}
             {/* User Icon - Always visible, links to profile or login */}
             {!loading && (
               <Link

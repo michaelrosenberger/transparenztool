@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowUpDown, Pencil, Trash2 } from "lucide-react";
+import { ArrowUpDown, Pencil, Trash2, Store } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -73,21 +73,39 @@ export default function AdminOverviewPage() {
 
   useEffect(() => {
     const checkUserAndLoadData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        router.push("/login");
-        return;
-      }
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          router.push("/login");
+          return;
+        }
 
-      const isAdmin = user.user_metadata?.is_admin;
-      if (!isAdmin) {
+        // Check admin role from user_roles table
+        const { data: roleData, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error checking admin role:', error.message);
+          router.push("/");
+          return;
+        }
+
+        if (!roleData) {
+          router.push("/");
+          return;
+        }
+
+        await loadUsers();
+        setLoading(false);
+      } catch (error) {
+        console.error('Error in checkUserAndLoadData:', error);
         router.push("/");
-        return;
       }
-
-      await loadUsers();
-      setLoading(false);
     };
 
     checkUserAndLoadData();
@@ -250,14 +268,26 @@ export default function AdminOverviewPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => router.push(`/admin/users/${user.id}`)}
+                        title="Benutzer bearbeiten"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
+                      {user.occupation === "Produzenten" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => router.push(`/admin/produzenten/${user.id}`)}
+                          title="Geschäftsprofil bearbeiten"
+                        >
+                          <Store className="h-4 w-4" />
+                        </Button>
+                      )}
                       {!user.is_admin && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => setDeleteUserId(user.id)}
+                          title="Benutzer löschen"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -269,6 +299,9 @@ export default function AdminOverviewPage() {
             </TableBody>
           </Table>
         </div>
+        <Button className="mt-6 flex ml-auto" onClick={() => router.push('/admin/produzenten/new')}>
+            Neuer Produzent
+          </Button>
       </Card>
       </Container>
 

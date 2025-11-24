@@ -31,6 +31,7 @@ interface Meal {
   id: string;
   name: string;
   description: string;
+  storage_name?: string;
   storage_address: string;
   storage_lat: number;
   storage_lng: number;
@@ -58,31 +59,36 @@ export default function PublicMealDetailPage() {
 
   useEffect(() => {
     const loadMealData = async () => {
-      // Set default location immediately
-      setUserLocation({ lat: 48.2082, lng: 16.3738 }); // Vienna default
-      
-      // Try to get user's actual location
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            setUserLocation({
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            });
-          },
-          (error) => {
-            console.error("Error getting location:", error);
-          },
-          {
-            timeout: 5000,
-            enableHighAccuracy: false,
-            maximumAge: 300000
-          }
-        );
-      }
+      try {
+        // Set default location immediately
+        setUserLocation({ lat: 48.2082, lng: 16.3738 }); // Vienna default
+        
+        // Try to get user's actual location
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              setUserLocation({
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+              });
+            },
+            (error) => {
+              console.error("Error getting location:", error);
+            },
+            {
+              timeout: 5000,
+              enableHighAccuracy: false,
+              maximumAge: 300000
+            }
+          );
+        }
 
-      await loadMeal(mealId);
-      setLoading(false);
+        await loadMeal(mealId);
+      } catch (error) {
+        console.error("Error in loadMealData:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadMealData();
@@ -229,7 +235,8 @@ export default function PublicMealDetailPage() {
             storageLocation={{ 
               lat: meal.storage_lat, 
               lng: meal.storage_lng, 
-              address: meal.storage_address 
+              address: meal.storage_address,
+              name: meal.storage_name
             }}
             mealName={meal.name}
           />

@@ -11,6 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import dynamic from "next/dynamic";
 import { MapPin } from "lucide-react";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 // Dynamically import map component to avoid SSR issues
 const MapComponent = dynamic(() => import("@/app/components/MapComponent"), {
@@ -31,6 +38,7 @@ interface Meal {
   id: string;
   name: string;
   description: string;
+  storage_name?: string;
   storage_address: string;
   storage_lat: number;
   storage_lng: number;
@@ -58,31 +66,36 @@ export default function PresenationMealDetailPage() {
 
   useEffect(() => {
     const loadMealData = async () => {
-      // Set default location immediately
-      setUserLocation({ lat: 48.2082, lng: 16.3738 }); // Vienna default
-      
-      // Try to get user's actual location
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            setUserLocation({
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            });
-          },
-          (error) => {
-            console.error("Error getting location:", error);
-          },
-          {
-            timeout: 5000,
-            enableHighAccuracy: false,
-            maximumAge: 300000
-          }
-        );
-      }
+      try {
+        // Set default location immediately
+        setUserLocation({ lat: 48.2082, lng: 16.3738 }); // Vienna default
+        
+        // Try to get user's actual location
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              setUserLocation({
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+              });
+            },
+            (error) => {
+              console.error("Error getting location:", error);
+            },
+            {
+              timeout: 5000,
+              enableHighAccuracy: false,
+              maximumAge: 300000
+            }
+          );
+        }
 
-      await loadMeal(mealId);
-      setLoading(false);
+        await loadMeal(mealId);
+      } catch (error) {
+        console.error("Error in loadMealData:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadMealData();
@@ -229,7 +242,8 @@ export default function PresenationMealDetailPage() {
             storageLocation={{ 
               lat: meal.storage_lat, 
               lng: meal.storage_lng, 
-              address: meal.storage_address 
+              address: meal.storage_address,
+              name: meal.storage_name
             }}
             mealName={meal.name}
           />
@@ -312,76 +326,84 @@ export default function PresenationMealDetailPage() {
       <Container asPage>
         <h2 className="mb-8">Die Produzenten</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
-          {/* Get unique farmers from vegetables */}
-          {Array.from(new Map(transformedVegetables.map(veg => [veg.farmer, veg])).values()).map((veg, index) => {
-            const farmerName = veg.farmer;
-            const farmerAddress = veg.location.address;
-            // Get all vegetables from this farmer
-            const farmerVegetables = transformedVegetables
-              .filter(v => v.farmer === veg.farmer)
-              .map(v => v.vegetable);
+        <Carousel className="w-full mb-8">
+          <CarouselContent>
+            {/* Get unique farmers from vegetables */}
+            {Array.from(new Map(transformedVegetables.map(veg => [veg.farmer, veg])).values()).map((veg, index) => {
+              const farmerName = veg.farmer;
+              const farmerAddress = veg.location.address;
+              // Get all vegetables from this farmer
+              const farmerVegetables = transformedVegetables
+                .filter(v => v.farmer === veg.farmer)
+                .map(v => v.vegetable);
 
-            // Get farmer profile for images
-            const farmerProfile = farmerProfiles.get(farmerName);
-            const featuredImage = farmerProfile?.business_images && farmerProfile.business_images.length > 0
-              ? farmerProfile.business_images[farmerProfile.featured_image_index || 0]
-              : farmerProfile?.profile_image;
+              // Get farmer profile for images
+              const farmerProfile = farmerProfiles.get(farmerName);
+              const featuredImage = farmerProfile?.business_images && farmerProfile.business_images.length > 0
+                ? farmerProfile.business_images[farmerProfile.featured_image_index || 0]
+                : farmerProfile?.profile_image;
 
-            const cardContent = (
-              <Card 
-                className={farmerProfile?.user_id ? "cursor-pointer hover:shadow-lg transition-shadow h-full" : ""}
-                id={`farmer-${farmerName.replace(/\s+/g, '-').toLowerCase()}`}
-              >
-                {/* Featured Business Image */}
-                <div className="aspect-video bg-gray-100 relative overflow-hidden rounded-lg mb-4">
-                  {featuredImage ? (
-                    <img
-                      src={featuredImage}
-                      alt={farmerName}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                      <Avatar className="h-24 w-24">
-                        <AvatarFallback className="text-3xl">
-                          {farmerName.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
+              const cardContent = (
+                <Card 
+                  className={farmerProfile?.user_id ? "cursor-pointer hover:shadow-lg transition-shadow h-full" : "h-full"}
+                  id={`farmer-${farmerName.replace(/\s+/g, '-').toLowerCase()}`}
+                >
+                  {/* Featured Business Image */}
+                  <div className="aspect-video bg-gray-100 relative overflow-hidden rounded-lg mb-4">
+                    {featuredImage ? (
+                      <img
+                        src={featuredImage}
+                        alt={farmerName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                        <Avatar className="h-24 w-24">
+                          <AvatarFallback className="text-3xl">
+                            {farmerName.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Farmer Info */}
+                  <h3 className="text-2xl font-medium mb-2">{farmerName}</h3>
+                  <p className="text-base mb-4">{farmerAddress}</p>
+
+                  {/* Vegetables */}
+                  {farmerVegetables.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {farmerVegetables.map((vegetable: string, vegIndex: number) => (
+                        <Badge
+                          key={vegIndex}
+                          variant="outline"
+                          className="px-3 py-1 text-sm border-black rounded-full"
+                        >
+                          {vegetable}
+                        </Badge>
+                      ))}
                     </div>
                   )}
-                </div>
+                </Card>
+              );
 
-                {/* Farmer Info */}
-                <h3 className="text-2xl font-medium mb-2">{farmerName}</h3>
-                <p className="text-base mb-4">{farmerAddress}</p>
-
-                {/* Vegetables */}
-                {farmerVegetables.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {farmerVegetables.map((vegetable: string, vegIndex: number) => (
-                      <Badge
-                        key={vegIndex}
-                        variant="outline"
-                        className="px-3 py-1 text-sm border-black rounded-full"
-                      >
-                        {vegetable}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </Card>
-            );
-
-            return farmerProfile?.user_id ? (
-              <Link key={index} href={`/produzent/${farmerProfile.user_id}`} className="no-underline">
-                {cardContent}
-              </Link>
-            ) : (
-              <div key={index}>{cardContent}</div>
-            );
-          })}
-        </div>
+              return (
+                <CarouselItem key={index}>
+                  {farmerProfile?.user_id ? (
+                    <Link href={`/produzent/${farmerProfile.user_id}`} className="no-underline block">
+                      {cardContent}
+                    </Link>
+                  ) : (
+                    <div>{cardContent}</div>
+                  )}
+                </CarouselItem>
+              );
+            })}
+          </CarouselContent>
+          <CarouselPrevious />
+          <CarouselNext />
+        </Carousel>
 
         <div className="grid gap-8">
           <h2>So funktioniert unser Versprechen:</h2>

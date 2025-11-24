@@ -69,21 +69,39 @@ export default function EditUserPage() {
 
   useEffect(() => {
     const checkUserAndLoadData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        router.push("/login");
-        return;
-      }
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          router.push("/login");
+          return;
+        }
 
-      const isAdmin = user.user_metadata?.is_admin;
-      if (!isAdmin) {
+        // Check admin role from user_roles table
+        const { data: roleData, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error checking admin role:', error.message);
+          router.push("/");
+          return;
+        }
+
+        if (!roleData) {
+          router.push("/");
+          return;
+        }
+
+        await Promise.all([loadUser(), loadAvailableIngredients()]);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error in checkUserAndLoadData:', error);
         router.push("/");
-        return;
       }
-
-      await Promise.all([loadUser(), loadAvailableIngredients()]);
-      setLoading(false);
     };
 
     checkUserAndLoadData();
@@ -108,7 +126,7 @@ export default function EditUserPage() {
 
   const loadUser = async () => {
     try {
-      const response = await fetch("/api/admin/users");
+      const response = await fetch(`/api/admin/users/${userId}`);
 
       if (!response.ok) {
         router.push("/admin/overview");
@@ -116,7 +134,7 @@ export default function EditUserPage() {
       }
 
       const data = await response.json();
-      const user = data.users.find((u: any) => u.id === userId);
+      const user = data.user;
 
       if (!user) {
         router.push("/admin/overview");
@@ -134,7 +152,7 @@ export default function EditUserPage() {
         profile_image: user.profile_image || "",
         address_coordinates: user.address_coordinates,
       });
-      setIngredients(user.ingredients || []);
+      setIngredients(user.vegetables || []);
       setAddressStatus(user.address_coordinates ? "valid" : null);
     } catch (error) {
       router.push("/admin/overview");

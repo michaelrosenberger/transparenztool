@@ -30,7 +30,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import Link from "next/link";
-import { Pencil, Plus, Trash2, Upload, Image as ImageIcon } from "lucide-react";
+import { Pencil, Plus, Trash2, Upload, Image as ImageIcon, Eye, Calendar } from "lucide-react";
 
 interface Meal {
   id: string;
@@ -52,39 +52,98 @@ interface Ingredient {
   created_at: string;
 }
 
+interface MealMenu {
+  id: string;
+  menu_date: string;
+  title: string;
+  subtitle: string | null;
+  meal_ids: string[];
+  created_at: string;
+}
+
 export default function AdminPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [meals, setMeals] = useState<Meal[]>([]);
+  const [menus, setMenus] = useState<MealMenu[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [newIngredientName, setNewIngredientName] = useState("");
   const [uploadingImage, setUploadingImage] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [deleteMealId, setDeleteMealId] = useState<string | null>(null);
+  const [deleteMenuId, setDeleteMenuId] = useState<string | null>(null);
+  const [defaultStorageName, setDefaultStorageName] = useState("");
+  const [defaultStorageAddress, setDefaultStorageAddress] = useState("");
+  const [savingStorage, setSavingStorage] = useState(false);
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
+    let isMounted = true;
+
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        router.push("/login");
-        return;
-      }
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!isMounted) return;
+        
+        if (!user) {
+          router.push("/login");
+          return;
+        }
 
-      const isAdmin = user.user_metadata?.is_admin;
-      if (!isAdmin) {
-        router.push("/");
-        return;
-      }
+        // Check admin role from user_roles table
+        const { data: roleData, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
 
-      setUser(user);
-      await Promise.all([loadMeals(), loadIngredients()]);
-      setLoading(false);
+        if (!isMounted) return;
+
+        if (error) {
+          console.error('Error checking admin role:', error.message);
+          router.push("/");
+          return;
+        }
+
+        if (!roleData) {
+          router.push("/");
+          return;
+        }
+
+        setUser(user);
+        
+        // Load data sequentially with checks to prevent hanging
+        try {
+          await loadMeals();
+          if (!isMounted) return;
+          await loadMenus();
+          if (!isMounted) return;
+          await loadIngredients();
+          if (!isMounted) return;
+          await loadStorageSettings();
+        } catch (loadError) {
+          console.error('Error loading data:', loadError);
+        }
+        
+        if (isMounted) {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error in checkUser:', error);
+        if (isMounted) {
+          router.push("/");
+        }
+      }
     };
 
     checkUser();
+
+    return () => {
+      isMounted = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -95,14 +154,24 @@ export default function AdminPage() {
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("Error loading meals:", error);
-        return;
-      }
-
+      if (error) throw error;
       setMeals(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading meals:", error);
+    }
+  };
+
+  const loadMenus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("meal_menus")
+        .select("*")
+        .order("menu_date", { ascending: false });
+
+      if (error) throw error;
+      setMenus(data || []);
+    } catch (error: any) {
+      console.error("Error loading menus:", error);
     }
   };
 
@@ -121,6 +190,56 @@ export default function AdminPage() {
       setIngredients(data || []);
     } catch (error) {
       console.error("Error loading ingredients:", error);
+    }
+  };
+
+  const loadStorageSettings = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Load from user metadata
+      const storageName = user.user_metadata?.default_storage_name || "";
+      const storageAddress = user.user_metadata?.default_storage_address || "";
+      
+      setDefaultStorageName(storageName);
+      setDefaultStorageAddress(storageAddress);
+    } catch (error) {
+      console.error("Error loading storage settings:", error);
+    }
+  };
+
+  const saveStorageSettings = async () => {
+    if (!defaultStorageName.trim() || !defaultStorageAddress.trim()) {
+      setMessage({ type: "error", text: "Bitte füllen Sie beide Felder aus" });
+      return;
+    }
+
+    setSavingStorage(true);
+    setMessage(null); // Clear any previous messages
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          default_storage_name: defaultStorageName.trim(),
+          default_storage_address: defaultStorageAddress.trim(),
+        },
+      });
+
+      if (error) {
+        console.error("Error from Supabase:", error);
+        throw error;
+      }
+
+      // Reload the settings to confirm they were saved
+      await loadStorageSettings();
+      
+      setMessage({ type: "success", text: "Lageradresse erfolgreich gespeichert!" });
+    } catch (error: any) {
+      console.error("Error saving storage settings:", error);
+      setMessage({ type: "error", text: error.message || "Fehler beim Speichern der Lageradresse" });
+    } finally {
+      setSavingStorage(false);
     }
   };
 
@@ -277,7 +396,7 @@ export default function AdminPage() {
     }
   };
 
-  const deleteMeal = async () => {
+  const handleDeleteMeal = async () => {
     if (!deleteMealId) return;
 
     try {
@@ -286,18 +405,36 @@ export default function AdminPage() {
         .delete()
         .eq("id", deleteMealId);
 
-      if (error) {
-        console.error("Error deleting meal:", error);
-        setMessage({ type: "error", text: "Fehler beim Löschen der Mahlzeit" });
-        return;
-      }
+      if (error) throw error;
 
-      setMeals(meals.filter((meal) => meal.id !== deleteMealId));
-      setMessage({ type: "success", text: "Mahlzeit erfolgreich gelöscht" });
-      setDeleteMealId(null);
-    } catch (error) {
+      setMessage({ type: "success", text: "Mahlzeit erfolgreich gelöscht!" });
+      await loadMeals();
+    } catch (error: any) {
       console.error("Error deleting meal:", error);
-      setMessage({ type: "error", text: "Fehler beim Löschen der Mahlzeit" });
+      setMessage({ type: "error", text: error.message || "Fehler beim Löschen der Mahlzeit" });
+    } finally {
+      setDeleteMealId(null);
+    }
+  };
+
+  const handleDeleteMenu = async () => {
+    if (!deleteMenuId) return;
+
+    try {
+      const { error } = await supabase
+        .from("meal_menus")
+        .delete()
+        .eq("id", deleteMenuId);
+
+      if (error) throw error;
+
+      setMessage({ type: "success", text: "Menü erfolgreich gelöscht!" });
+      await loadMenus();
+    } catch (error: any) {
+      console.error("Error deleting menu:", error);
+      setMessage({ type: "error", text: error.message || "Fehler beim Löschen des Menüs" });
+    } finally {
+      setDeleteMenuId(null);
     }
   };
 
@@ -319,22 +456,6 @@ export default function AdminPage() {
       </Container>
 
       <Container asPage>
-        <AlertDialog open={!!message} onOpenChange={() => setMessage(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                {message?.type === "success" ? "Erfolg" : "Fehler"}
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                {message?.text}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogAction onClick={() => setMessage(null)}>
-              OK
-            </AlertDialogAction>
-          </AlertDialogContent>
-        </AlertDialog>
-
         <div className="grid gap-6 md:grid-cols-2 mb-6">
           <Card title="Neue Mahlzeit erstellen">
             <p className="mb-4">
@@ -363,6 +484,44 @@ export default function AdminPage() {
             </Button>
           </Card>
         </div>
+
+        {/* Storage Address Settings */}
+        <Card className="mb-6">
+          <h3 className="mb-4">Standard-Lageradresse</h3>
+          <p className="mb-4 text-sm text-gray-600">
+            Diese Adresse wird automatisch für neue Mahlzeiten vorausgewählt und kann bei jeder Mahlzeit individuell angepasst werden.
+          </p>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="storage-name">Name des Lagers</Label>
+              <Input
+                id="storage-name"
+                value={defaultStorageName}
+                onChange={(e) => setDefaultStorageName(e.target.value)}
+                placeholder="z.B. Hauptlager Wien"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="storage-address">Lageradresse</Label>
+              <Input
+                id="storage-address"
+                value={defaultStorageAddress}
+                onChange={(e) => setDefaultStorageAddress(e.target.value)}
+                placeholder="z.B. Musterstraße 123, 1010 Wien"
+              />
+            </div>
+
+            <Button
+              onClick={saveStorageSettings}
+              disabled={savingStorage}
+              size="lg"
+            >
+              {savingStorage ? "Wird gespeichert..." : "Lageradresse speichern"}
+            </Button>
+          </div>
+        </Card>
 
         {/* Ingredients Management */}
         <Card className="mt-6">
@@ -482,6 +641,81 @@ export default function AdminPage() {
           )}
         </Card>
 
+        <Card className="mt-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3>Alle Menüs</h3>
+            <Button onClick={() => router.push("/admin/menus")} size="lg">
+              Neues Menü
+            </Button>
+          </div>
+          {menus.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Datum</TableHead>
+                  <TableHead>Titel</TableHead>
+                  <TableHead>Untertitel</TableHead>
+                  <TableHead>Anzahl Mahlzeiten</TableHead>
+                  <TableHead className="text-right">Aktionen</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {menus.map((menu) => (
+                  <TableRow key={menu.id}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        {new Date(menu.menu_date).toLocaleDateString("de-DE")}
+                      </div>
+                    </TableCell>
+                    <TableCell>{menu.title}</TableCell>
+                    <TableCell className="max-w-xs truncate">
+                      {menu.subtitle || "-"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">
+                        {menu.meal_ids?.length || 0} Mahlzeit{menu.meal_ids?.length !== 1 ? "en" : ""}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => router.push(`/admin/menus/${menu.id}`)}
+                          title="Ansehen"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => router.push(`/admin/menus/${menu.id}/edit`)}
+                          title="Bearbeiten"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeleteMenuId(menu.id)}
+                          title="Löschen"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              Keine Menüs vorhanden. Erstellen Sie ein neues Menü.
+            </div>
+          )}
+        </Card>
+
         {meals.length > 0 && (
           <Card className="mt-6">
             <div className="flex items-center justify-between mb-4">
@@ -548,6 +782,25 @@ export default function AdminPage() {
         )}
       </Container>
 
+      {/* Success/Error Message Dialog */}
+      <AlertDialog open={!!message} onOpenChange={() => setMessage(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {message?.type === "success" ? "Erfolg" : "Fehler"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {message?.text}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setMessage(null)}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Delete Meal Confirmation Dialog */}
       <AlertDialog open={!!deleteMealId} onOpenChange={() => setDeleteMealId(null)}>
         <AlertDialogContent>
@@ -558,10 +811,28 @@ export default function AdminPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={deleteMeal} className="">
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteMeal}>
               Löschen
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Menu Confirmation Dialog */}
+      <AlertDialog open={!!deleteMenuId} onOpenChange={() => setDeleteMenuId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Menü löschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sind Sie sicher, dass Sie dieses Menü löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
             <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteMenu}>
+              Löschen
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

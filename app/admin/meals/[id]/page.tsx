@@ -43,6 +43,7 @@ interface Meal {
   id: string;
   name: string;
   description: string;
+  storage_name?: string;
   storage_address: string;
   storage_lat: number;
   storage_lng: number;
@@ -64,6 +65,7 @@ export default function EditMealPage() {
   const [meal, setMeal] = useState<Meal | null>(null);
   const [mealName, setMealName] = useState("");
   const [mealDescription, setMealDescription] = useState("");
+  const [storageName, setStorageName] = useState("");
   const [storageAddress, setStorageAddress] = useState("");
   const [vegetables, setVegetables] = useState<Meal["vegetables"]>([]);
   const [farmers, setFarmers] = useState<FarmerProfile[]>([]);
@@ -85,23 +87,41 @@ export default function EditMealPage() {
 
   useEffect(() => {
     const checkUserAndLoadMeal = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        router.push("/login");
-        return;
-      }
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          router.push("/login");
+          return;
+        }
 
-      const isAdmin = user.user_metadata?.is_admin;
-      if (!isAdmin) {
+        // Check admin role from user_roles table
+        const { data: roleData, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error checking admin role:', error.message);
+          router.push("/");
+          return;
+        }
+
+        if (!roleData) {
+          router.push("/");
+          return;
+        }
+
+        setUser(user);
+        await loadFarmers();
+        await loadMeal();
+        setLoading(false);
+      } catch (error) {
+        console.error('Error in checkUserAndLoadMeal:', error);
         router.push("/");
-        return;
       }
-
-      setUser(user);
-      await loadFarmers();
-      await loadMeal();
-      setLoading(false);
     };
 
     checkUserAndLoadMeal();
@@ -110,14 +130,8 @@ export default function EditMealPage() {
 
   const loadFarmers = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const response = await fetch("/api/admin/farmers", {
-        headers: {
-          "Authorization": `Bearer ${session.access_token}`,
-        },
-      });
+      // Auth is handled via cookies on the server side
+      const response = await fetch("/api/admin/farmers");
 
       if (!response.ok) return;
 
@@ -145,6 +159,7 @@ export default function EditMealPage() {
       setMeal(data);
       setMealName(data.name);
       setMealDescription(data.description);
+      setStorageName(data.storage_name || "");
       setStorageAddress(data.storage_address);
       setVegetables(data.vegetables || []);
     } catch (error) {
@@ -324,6 +339,7 @@ export default function EditMealPage() {
         .update({
           name: mealName,
           description: mealDescription,
+          storage_name: storageName,
           storage_address: storageAddress,
           vegetables: vegetables,
         })
@@ -508,12 +524,22 @@ export default function EditMealPage() {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="storage-name">Name des Lagers</Label>
+              <Input
+                id="storage-name"
+                value={storageName}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStorageName(e.target.value)}
+                placeholder="z.B. Hauptlager Wien"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="storage-address">Lageradresse</Label>
               <Input
                 id="storage-address"
                 value={storageAddress}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStorageAddress(e.target.value)}
-                placeholder="Lageradresse"
+                placeholder="z.B. Musterstraße 123, 1010 Wien"
               />
             </div>
           </div>

@@ -91,15 +91,8 @@ export default function LogistikOrderDetailPage() {
 
   const loadFarmerName = async (userId: string) => {
     try {
-      // Use admin API to get user metadata
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const response = await fetch(`/api/admin/user/${userId}`, {
-        headers: {
-          "Authorization": `Bearer ${session.access_token}`,
-        },
-      });
+      // Auth is handled via cookies on the server side
+      const response = await fetch(`/api/admin/user/${userId}`);
 
       if (response.ok) {
         const { user: farmerUser } = await response.json();

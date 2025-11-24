@@ -40,7 +40,7 @@ interface MapComponentProps {
   // For meal tracking mode
   vegetables?: VegetableSource[];
   userLocation?: { lat: number; lng: number } | null;
-  storageLocation?: { lat: number; lng: number; address: string } | null;
+  storageLocation?: { lat: number; lng: number; address: string; name?: string } | null;
   mealName?: string;
   
   // For farmer directory mode
@@ -57,7 +57,7 @@ interface MapComponentProps {
 function FitBounds({ vegetables, userLocation, storageLocation, farmers }: { 
   vegetables?: VegetableSource[], 
   userLocation?: { lat: number; lng: number } | null,
-  storageLocation?: { lat: number; lng: number; address: string } | null,
+  storageLocation?: { lat: number; lng: number; address: string; name?: string } | null,
   farmers?: FarmerProfile[]
 }) {
   const map = useMap();
@@ -93,7 +93,12 @@ function FitBounds({ vegetables, userLocation, storageLocation, farmers }: {
     
     // Fit map to bounds if we have points
     if (bounds.length > 0) {
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 10 });
+      map.fitBounds(bounds, { 
+        padding: [50, 50], 
+        maxZoom: 13,
+        animate: true,
+        duration: 0.5
+      });
     }
   }, [map, vegetables, userLocation, storageLocation, farmers]);
 
@@ -213,12 +218,6 @@ export default function MapComponent({
   const farmIcon = createCustomIcon('orange');
   const storageIcon = createStorageIcon('#fff');
   const userIcon = createMealIcon('#fff');
-
-  // Austria bounds and center
-  const austriaBounds: [[number, number], [number, number]] = [
-    [46.4, 9.5],   // Southwest corner (lat, lng)
-    [49.0, 17.2]   // Northeast corner (lat, lng)
-  ];
   
   // Calculate center point based on all markers
   const calculateCenter = () => {
@@ -265,10 +264,8 @@ export default function MapComponent({
       key={dark ? 'dark-map' : 'light-map'}
       center={[center.lat, center.lng]}
       zoom={8}
-      minZoom={7}
-      maxZoom={13}
-      maxBounds={austriaBounds}
-      maxBoundsViscosity={1.0}
+      minZoom={3}
+      maxZoom={18}
       style={{ height: "100%", width: "100%" }}
       scrollWheelZoom={false}
     >
@@ -302,7 +299,7 @@ export default function MapComponent({
         <Marker position={[storageLocation.lat, storageLocation.lng]} icon={storageIcon}>
           <Popup>
             <div className="text-left">
-              <strong>Storage Location</strong>
+              <strong>{storageLocation.name || "Storage Location"}</strong>
               <br />
               <span className="text-xs">{storageLocation.address}</span>
             </div>

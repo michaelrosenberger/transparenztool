@@ -34,7 +34,14 @@ export default function Login() {
       router.push("/");
       router.refresh();
     } catch (error: any) {
-      setError(error.message || "Ein Fehler ist beim Anmelden aufgetreten");
+      const errorMessage = error.message || "Ein Fehler ist beim Anmelden aufgetreten";
+      
+      // Add more specific error messages
+      if (error.message?.includes("fetch") || error.message?.includes("quota") || error.message?.includes("403")) {
+        setError("Verbindungsfehler: Bitte versuchen Sie es in einigen Minuten erneut.");
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
