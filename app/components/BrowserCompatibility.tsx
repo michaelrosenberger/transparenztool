@@ -29,7 +29,7 @@ export default function BrowserCompatibility() {
     return null;
   }
 
-  return (
+  return null /*(
     <div style={{
       position: 'fixed',
       bottom: 0,
@@ -45,5 +45,5 @@ export default function BrowserCompatibility() {
       <strong>Hinweis:</strong> Ihr Browser wird möglicherweise nicht vollständig unterstützt. 
       Für die beste Erfahrung verwenden Sie bitte einen modernen Browser.
     </div>
-  );
+  )*/;
 }
