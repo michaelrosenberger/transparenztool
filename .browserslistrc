@@ -1,0 +1,15 @@
+# Browsers that we support
+
+# Production
+> 0.5%
+last 2 versions
+Firefox ESR
+not dead
+
+# Samsung TV browsers
+Chrome >= 38
+Samsung >= 4
+
+# Older browsers for TV compatibility
+iOS >= 10
+Android >= 5
