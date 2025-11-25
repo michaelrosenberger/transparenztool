@@ -9,7 +9,8 @@ import PageSkeleton from "@/app/components/PageSkeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { Calendar, ExternalLink } from "lucide-react";
+import { Calendar, ExternalLink, QrCode, Download } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 
 interface MealMenu {
   id: string;
@@ -138,20 +139,71 @@ export default function MenuDetailPage() {
       </Container>
 
       <Container asPage>
-        <div className="flex gap-4 mb-6 flex-wrap">
-          <Link href={`/menus/${menuId}`} target="_blank" rel="noopener noreferrer">
-            <Button variant="outline">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Öffentliche Ansicht
-            </Button>
-          </Link>
-          <Button onClick={() => router.push(`/admin/menus/${menuId}/edit`)}>
-            Bearbeiten
-          </Button>
-          <Button variant="outline" onClick={() => router.push("/admin")}>
-            Zurück zum Dashboard
-          </Button>
-        </div>
+        {menu && (
+          <Card className="mb-6">
+            <h3 className="mb-4 flex items-center gap-2">
+              <QrCode className="h-5 w-5" />
+              QR-Code für dieses Menü
+            </h3>
+            <div className="flex flex-col md:flex-row gap-6 items-start">
+              <div className="flex-shrink-0 bg-white">
+                <QRCodeSVG 
+                  value={`${typeof window !== 'undefined' ? window.location.origin : ''}/menus/${menuId}`}
+                  size={256}
+                  level="H"
+                  includeMargin={true}
+                />
+              </div>
+              <div className="flex flex-wrap">
+                <p className="text-sm text-gray-600 mb-2">
+                  Scannen Sie diesen QR-Code, um die öffentliche Detailseite dieses Menüs anzuzeigen.
+                </p>
+                <p className="text-sm font-mono bg-gray-50 p-2 rounded border border-gray-200 break-all">
+                  {typeof window !== 'undefined' ? window.location.origin : ''}/menus/{menuId}
+                </p>
+                <div className="mt-4 flex gap-2 flex-wrap">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const svg = document.querySelector('svg');
+                      if (!svg) return;
+                      const svgData = new XMLSerializer().serializeToString(svg);
+                      const canvas = document.createElement("canvas");
+                      const ctx = canvas.getContext("2d");
+                      const img = new Image();
+                      img.onload = () => {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx?.drawImage(img, 0, 0);
+                        const pngFile = canvas.toDataURL("image/png");
+                        const downloadLink = document.createElement("a");
+                        downloadLink.download = `menu-${menuId}-qr.png`;
+                        downloadLink.href = pngFile;
+                        downloadLink.click();
+                      };
+                      img.src = "data:image/svg+xml;base64," + btoa(svgData);
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    QR-Code herunterladen
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(`/menus/${menuId}`, "_blank")}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Vorschau öffnen
+                  </Button>
+                  <Button onClick={() => router.push(`/admin/menus/${menuId}/edit`)}>
+                    Bearbeiten
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {meals.length === 0 ? (
           <Card>
@@ -160,14 +212,14 @@ export default function MenuDetailPage() {
             </p>
           </Card>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
             {meals.map((meal, index) => (
               <Link
                 key={meal.id}
                 href={`/meal/${meal.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block"
+                className="block no-underline"
               >
                 <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
                   <div className="flex items-start justify-between mb-3">
@@ -175,7 +227,7 @@ export default function MenuDetailPage() {
                       <Badge variant="outline">#{index + 1}</Badge>
                       <h3 className="text-xl font-medium">{meal.name}</h3>
                     </div>
-                    <ExternalLink className="h-5 w-5 text-muted-foreground flex-shrink-0 ml-2" />
+                    <ExternalLink className="h-5 w-5  flex-shrink-0 ml-2" />
                   </div>
                   
                   {meal.description && (
@@ -186,12 +238,12 @@ export default function MenuDetailPage() {
 
                   <div className="flex flex-wrap gap-2">
                     {meal.vegetables?.slice(0, 4).map((veg, idx) => (
-                      <Badge key={idx} variant="secondary" className="text-xs">
+                      <Badge key={idx} variant="default" className="text-xs">
                         {veg.vegetable}
                       </Badge>
                     ))}
                     {meal.vegetables?.length > 4 && (
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="default" className="text-xs">
                         +{meal.vegetables.length - 4} mehr
                       </Badge>
                     )}

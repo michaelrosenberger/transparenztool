@@ -224,7 +224,7 @@ export default function AdminOverviewPage() {
       <Container dark fullWidth>
         <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div>
-            <h1>Benutzerverwaltung</h1>
+            <h1>Verwaltung</h1>
             <p>Alle registrierten Benutzer und ihre Informationen</p>
           </div>
         </div>

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useParams } from "next/navigation";
 import Link from "next/link";
 import Card from "@/app/components/Card";
 import Container from "@/app/components/Container";
@@ -20,63 +19,69 @@ interface Meal {
   }>;
 }
 
-interface MealMenu {
+interface Menu {
   id: string;
   menu_date: string;
   title: string;
   subtitle: string | null;
   meal_ids: string[];
-  created_at: string;
 }
 
-export default function PublicMenuDetailPage() {
+export default function TodayMenuPage() {
   const [loading, setLoading] = useState(true);
-  const [menu, setMenu] = useState<MealMenu | null>(null);
+  const [menu, setMenu] = useState<Menu | null>(null);
   const [meals, setMeals] = useState<Meal[]>([]);
-  
-  const params = useParams();
   const supabase = useMemo(() => createClient(), []);
-  const menuId = params.id as string;
 
   useEffect(() => {
-    const loadMenuData = async () => {
-      try {
-        // Load menu
-        const { data: menuData, error: menuError } = await supabase
-          .from("meal_menus")
+    loadTodayMenu();
+  }, []);
+
+  const loadTodayMenu = async () => {
+    try {
+      // Fetch the today menu
+      const { data: menuData, error: menuError } = await supabase
+        .from("meal_menus")
+        .select("*")
+        .eq("is_today", true)
+        .single();
+
+      if (menuError) {
+        console.error("Error loading today menu:", menuError);
+        setLoading(false);
+        return;
+      }
+
+      if (!menuData) {
+        setLoading(false);
+        return;
+      }
+
+      setMenu(menuData);
+
+      // Fetch the meals for this menu
+      if (menuData.meal_ids && menuData.meal_ids.length > 0) {
+        const { data: mealsData, error: mealsError } = await supabase
+          .from("meals")
           .select("*")
-          .eq("id", menuId)
-          .single();
+          .in("id", menuData.meal_ids);
 
-        if (menuError) throw menuError;
-        setMenu(menuData);
-
-        // Load meals
-        if (menuData.meal_ids && menuData.meal_ids.length > 0) {
-          const { data: mealsData, error: mealsError } = await supabase
-            .from("meals")
-            .select("id, name, description, vegetables")
-            .in("id", menuData.meal_ids);
-
-          if (mealsError) throw mealsError;
-
-          // Sort meals according to meal_ids order
+        if (mealsError) {
+          console.error("Error loading meals:", mealsError);
+        } else if (mealsData) {
+          // Sort meals by the order in meal_ids
           const sortedMeals = menuData.meal_ids
-            .map((id: string) => mealsData?.find((m: Meal) => m.id === id))
-            .filter((m: Meal | undefined): m is Meal => m !== undefined);
-
+            .map((id: string) => (mealsData as Meal[]).find((meal: Meal) => meal.id === id))
+            .filter((meal: Meal | undefined): meal is Meal => meal !== undefined);
           setMeals(sortedMeals);
         }
-
-        setLoading(false);
-      } catch (error) {
-        console.error("Error loading menu:", error);
-        setLoading(false);
       }
-    };
-
-    loadMenuData();
-  }, [menuId, supabase]);
+    } catch (error) {
+      console.error("Error loading today menu:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return <PageSkeleton />;
@@ -84,18 +89,27 @@ export default function PublicMenuDetailPage() {
 
   if (!menu) {
     return (
-      <Container>
-        <Card>
-          <div className="text-center py-8">
-            <p className="mb-4">Menü nicht gefunden</p>
+      <>
+        <Container dark fullWidth>
+          <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+            <div>
+              <h1>Tagesmenü</h1>
+            </div>
           </div>
-        </Card>
-      </Container>
+        </Container>
+
+        <Container asPage>
+          <Card>
+            <p className="text-center py-8 text-muted-foreground">
+              Derzeit ist kein Tagesmenü verfügbar.
+            </p>
+          </Card>
+        </Container>
+      </>
     );
   }
 
   const formattedDate = new Date(menu.menu_date).toLocaleDateString("de-DE", {
-    weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -147,7 +161,7 @@ export default function PublicMenuDetailPage() {
                         {veg.vegetable}
                       </Badge>
                     ))}
-                    {meal.vegetables?.length > 4 && (
+                    {meal.vegetables && meal.vegetables.length > 4 && (
                       <Badge variant="default" className="text-sm">
                         +{meal.vegetables.length - 4} mehr
                       </Badge>

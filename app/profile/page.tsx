@@ -7,7 +7,6 @@ import Card from "@/app/components/Card";
 import Container from "@/app/components/Container";
 import PageSkeleton from "@/app/components/PageSkeleton";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -48,14 +47,11 @@ export default function Profile() {
   const [addressCoordinates, setAddressCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [vegetables, setVegetables] = useState<string[]>([]);
   const [availableVegetables, setAvailableVegetables] = useState<string[]>([]);
-  const [profileImage, setProfileImage] = useState<string>("");
-  const [uploadingImage, setUploadingImage] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [user, setUser] = useState<any>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
@@ -103,7 +99,6 @@ export default function Profile() {
       setCity(metadata.city || "");
       setAddressCoordinates(metadata.address_coordinates || null);
       setVegetables(metadata.vegetables || []);
-      setProfileImage(metadata.profile_image || "");
     } catch (error: any) {
       setMessage({ type: "error", text: error.message });
     } finally {
@@ -177,7 +172,6 @@ export default function Profile() {
           city: city,
           address_coordinates: coordinates,
           vegetables: vegetables,
-          profile_image: profileImage,
         },
       });
 
@@ -191,57 +185,6 @@ export default function Profile() {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      setMessage({ type: "error", text: "Bitte wählen Sie eine Bilddatei aus" });
-      return;
-    }
-
-    // Disallow GIF files
-    if (file.type === "image/gif") {
-      setMessage({ type: "error", text: "GIF-Dateien sind nicht erlaubt" });
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setMessage({ type: "error", text: "Bildgröße muss kleiner als 5MB sein" });
-      return;
-    }
-
-    setUploadingImage(true);
-    setMessage(null);
-
-    try {
-      // Create a unique file name
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `profile-images/${fileName}`;
-
-      // Upload to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(filePath);
-
-      setProfileImage(publicUrl);
-      setMessage({ type: "success", text: "Bild erfolgreich hochgeladen! Vergessen Sie nicht, Ihr Profil zu speichern." });
-    } catch (error: any) {
-      setMessage({ type: "error", text: error.message || "Bild konnte nicht hochgeladen werden" });
-    } finally {
-      setUploadingImage(false);
-    }
-  };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -325,43 +268,6 @@ export default function Profile() {
                 placeholder="Geben Sie Ihren vollständigen Namen ein"
               />
             </div>
-
-            {/* Profile Image Upload - Only for Produzenten */}
-            {occupation === "Produzenten" && (
-              <div className="space-y-2">
-                <Label>Profilbild</Label>
-                <div className="flex items-center gap-4 flex-wrap">
-                  <Avatar className="h-20 w-20">
-                    <AvatarImage src={profileImage} alt={fullName || "Profile"} />
-                    <AvatarFallback>
-                      {fullName ? fullName.charAt(0).toUpperCase() : "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploadingImage}
-                      >
-                        {uploadingImage ? "Wird hochgeladen..." : "Bild hochladen"}
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Max 5MB. Unterstützte Formate: JPG, PNG
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
 
             <div className="space-y-2">
               <Label htmlFor="occupation">Tätigkeit</Label>

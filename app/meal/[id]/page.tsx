@@ -44,7 +44,6 @@ interface FarmerProfile {
   full_name: string;
   business_images?: string[];
   featured_image_index?: number;
-  profile_image?: string;
 }
 
 export default function PublicMealDetailPage() {
@@ -137,7 +136,6 @@ export default function PublicMealDetailPage() {
           full_name: farmer.full_name,
           business_images: farmer.business_images || [],
           featured_image_index: farmer.featured_image_index || 0,
-          profile_image: farmer.profile_image,
         });
       });
 
@@ -333,7 +331,7 @@ export default function PublicMealDetailPage() {
             const farmerProfile = farmerProfiles.get(farmerName);
             const featuredImage = farmerProfile?.business_images && farmerProfile.business_images.length > 0
               ? farmerProfile.business_images[farmerProfile.featured_image_index || 0]
-              : farmerProfile?.profile_image;
+              : undefined;
 
             const cardContent = (
               <Card 

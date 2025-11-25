@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Upload, Image as ImageIcon, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import {
   MultiSelect,
   MultiSelectContent,
@@ -42,7 +42,6 @@ interface UserData {
   street?: string;
   zip_code?: string;
   city?: string;
-  profile_image?: string;
   ingredients?: string[];
   address_coordinates?: { lat: number; lng: number };
 }
@@ -61,7 +60,6 @@ export default function EditUserPage() {
   const [availableIngredients, setAvailableIngredients] = useState<string[]>([]);
   const [addressValidating, setAddressValidating] = useState(false);
   const [addressStatus, setAddressStatus] = useState<"valid" | "invalid" | null>(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -149,7 +147,6 @@ export default function EditUserPage() {
         street: user.street || "",
         zip_code: user.zip_code || "",
         city: user.city || "",
-        profile_image: user.profile_image || "",
         address_coordinates: user.address_coordinates,
       });
       setIngredients(user.vegetables || []);
@@ -190,34 +187,6 @@ export default function EditUserPage() {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !userData) return;
-
-    setUploadingImage(true);
-    try {
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${userData.id}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(filePath);
-
-      setEditForm((prev: any) => ({ ...prev, profile_image: publicUrl }));
-      setMessage({ type: "success", text: "Bild erfolgreich hochgeladen" });
-    } catch (error) {
-      setMessage({ type: "error", text: "Fehler beim Hochladen des Bildes" });
-    } finally {
-      setUploadingImage(false);
-    }
-  };
 
   const handleDeleteUser = async () => {
     if (!userData) return;
@@ -257,7 +226,6 @@ export default function EditUserPage() {
         zip_code: editForm.zip_code,
         city: editForm.city,
         ingredients: ingredients,
-        profile_image: editForm.profile_image,
         address_coordinates: editForm.address_coordinates,
       };
 
@@ -301,44 +269,6 @@ export default function EditUserPage() {
 
       <Container asPage>
         <div className="grid gap-6">
-          {/* Profile Image Card */}
-          <Card title="Profilbild">
-            <div className="flex items-center gap-6">
-              {editForm.profile_image ? (
-                <img
-                  src={editForm.profile_image}
-                  alt="Profile"
-                  className="h-32 w-32 rounded-full object-cover border-4 border-gray-100"
-                />
-              ) : (
-                <div className="h-32 w-32 rounded-full bg-gray-100 flex items-center justify-center border-4 border-gray-200">
-                  <ImageIcon className="h-16 w-16 text-gray-400" />
-                </div>
-              )}
-              <div className="flex-1">
-                <p className="text-sm text-gray-600 mb-3">
-                  Laden Sie ein Profilbild hoch. Empfohlen: Quadratisches Format, mindestens 200x200px.
-                </p>
-                <input
-                  type="file"
-                  id="profile-image"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageUpload}
-                  disabled={uploadingImage}
-                />
-                <Button
-                  variant="outline"
-                  onClick={() => document.getElementById("profile-image")?.click()}
-                  disabled={uploadingImage}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  {uploadingImage ? "Lädt..." : "Bild hochladen"}
-                </Button>
-              </div>
-            </div>
-          </Card>
-
           {/* Personal Information Card */}
           <Card title="Persönliche Informationen">
             <div className="space-y-4">

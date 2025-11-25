@@ -58,6 +58,7 @@ interface MealMenu {
   title: string;
   subtitle: string | null;
   meal_ids: string[];
+  is_today: boolean;
   created_at: string;
 }
 
@@ -75,6 +76,7 @@ export default function AdminPage() {
   const [defaultStorageName, setDefaultStorageName] = useState("");
   const [defaultStorageAddress, setDefaultStorageAddress] = useState("");
   const [savingStorage, setSavingStorage] = useState(false);
+  const [settingTodayMenu, setSettingTodayMenu] = useState<string | null>(null);
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
 
@@ -219,16 +221,20 @@ export default function AdminPage() {
     setMessage(null); // Clear any previous messages
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: {
+      const response = await fetch('/api/admin/storage-settings', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           default_storage_name: defaultStorageName.trim(),
           default_storage_address: defaultStorageAddress.trim(),
-        },
+        }),
       });
 
-      if (error) {
-        console.error("Error from Supabase:", error);
-        throw error;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+        throw new Error(errorData.error || "Fehler beim Speichern");
       }
 
       // Reload the settings to confirm they were saved
@@ -438,6 +444,33 @@ export default function AdminPage() {
     }
   };
 
+  const setTodayMenu = async (menuId: string) => {
+    setSettingTodayMenu(menuId);
+
+    try {
+      const response = await fetch('/api/admin/menus/today', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ menu_id: menuId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+        throw new Error(errorData.error || "Fehler beim Setzen des Tagesmenüs");
+      }
+
+      setMessage({ type: "success", text: "Tagesmenü erfolgreich gesetzt!" });
+      await loadMenus();
+    } catch (error: any) {
+      console.error("Error setting today menu:", error);
+      setMessage({ type: "error", text: error.message || "Fehler beim Setzen des Tagesmenüs" });
+    } finally {
+      setSettingTodayMenu(null);
+    }
+  };
+
   if (loading) {
     return <PageSkeleton />;
   }
@@ -470,9 +503,9 @@ export default function AdminPage() {
             </Button>
           </Card>
 
-          <Card title="Benutzerverwaltung">
+          <Card title="Verwaltung">
             <p className="mb-4">
-              Statistiken und Übersicht über das System.
+              Statistiken und Übersicht über alle Benutzer.
             </p>
             <Button
               size="lg"
@@ -656,6 +689,7 @@ export default function AdminPage() {
                   <TableHead>Titel</TableHead>
                   <TableHead>Untertitel</TableHead>
                   <TableHead>Anzahl Mahlzeiten</TableHead>
+                  <TableHead>Tagesmenü</TableHead>
                   <TableHead className="text-right">Aktionen</TableHead>
                 </TableRow>
               </TableHeader>
@@ -676,6 +710,15 @@ export default function AdminPage() {
                       <Badge variant="secondary">
                         {menu.meal_ids?.length || 0} Mahlzeit{menu.meal_ids?.length !== 1 ? "en" : ""}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={menu.is_today || false}
+                          onCheckedChange={() => setTodayMenu(menu.id)}
+                          disabled={settingTodayMenu === menu.id}
+                        />
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

@@ -29,7 +29,6 @@ interface ProducentProfile {
   vegetables: string[];
   business_images?: string[];
   featured_image_index?: number;
-  profile_image?: string;
   address_coordinates?: { lat: number; lng: number };
 }
 
@@ -100,7 +99,6 @@ export default function ProducentPublicPage() {
         vegetables: producentData.vegetables || [],
         business_images: producentData.business_images || [],
         featured_image_index: producentData.featured_image_index || 0,
-        profile_image: producentData.profile_image,
         address_coordinates: producentData.address_coordinates,
       });
     } catch (error) {
@@ -135,7 +133,7 @@ export default function ProducentPublicPage() {
   // Get featured image or fallback
   const featuredImage = producent.business_images && producent.business_images.length > 0
     ? producent.business_images[producent.featured_image_index || 0]
-    : producent.profile_image;
+    : undefined;
 
   // Get all business images
   const allImages = producent.business_images && producent.business_images.length > 0
@@ -209,7 +207,7 @@ export default function ProducentPublicPage() {
               <h3 className="mb-4">Kontakt & Standort</h3>
               
               {address && (
-                <div className="flex items-start gap-3 mb-4">
+                <div className="flex items-center gap-3 mb-4">
                   <MapPin className="h-5 w-5 text-gray-600 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="font-medium">Adresse</p>
@@ -219,7 +217,7 @@ export default function ProducentPublicPage() {
               )}
 
               {producent.full_name && (
-                <div className="flex items-start gap-3 mb-4">
+                <div className="flex items-center gap-3 mb-4">
                   <User className="h-5 w-5 text-gray-600 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="font-medium">Kontaktperson</p>

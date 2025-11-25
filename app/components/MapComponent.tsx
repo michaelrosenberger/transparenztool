@@ -51,6 +51,9 @@ interface MapComponentProps {
   
   // Dark mode
   dark?: boolean;
+  
+  // Highlighted farmer (for carousel sync)
+  highlightedFarmer?: string | null;
 }
 
 // Component to fit map bounds to show all markers
@@ -112,7 +115,8 @@ export default function MapComponent({
   mealName,
   farmers = [],
   mode = 'meal',
-  dark = false
+  dark = false,
+  highlightedFarmer = null
 }: MapComponentProps) {
   // State for storing route coordinates
   const [routes, setRoutes] = useState<{
@@ -122,9 +126,21 @@ export default function MapComponent({
   // Fetch route from OSRM API
   const fetchRoute = async (start: [number, number], end: [number, number], routeKey: string) => {
     try {
+      // Add timeout to prevent hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
       const response = await fetch(
-        `https://router.project-osrm.org/route/v1/driving/${start[1]},${start[0]};${end[1]},${end[0]}?overview=full&geometries=geojson`
+        `https://router.project-osrm.org/route/v1/driving/${start[1]},${start[0]};${end[1]},${end[0]}?overview=full&geometries=geojson`,
+        { signal: controller.signal }
       );
+      
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
       
       if (data.routes && data.routes[0]) {
@@ -132,9 +148,16 @@ export default function MapComponent({
           (coord: [number, number]) => [coord[1], coord[0]] as [number, number]
         );
         setRoutes(prev => ({ ...prev, [routeKey]: coordinates }));
+      } else {
+        // No route found, use straight line
+        setRoutes(prev => ({ ...prev, [routeKey]: [start, end] }));
       }
     } catch (error) {
-      console.error('Error fetching route:', error);
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.warn('Route fetch timeout, using straight line:', routeKey);
+      } else {
+        console.warn('Error fetching route, using straight line:', error);
+      }
       // Fallback to straight line if routing fails
       setRoutes(prev => ({ ...prev, [routeKey]: [start, end] }));
     }
@@ -157,16 +180,21 @@ export default function MapComponent({
         fetchRoute(storageCoords, userCoords, 'storage-user');
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vegetables, userLocation, storageLocation, mode]);
 
   // Create custom SVG icons for farms and user
-  const createCustomIcon = (color: string, imageUrl?: string) => {
+  const createCustomIcon = (color: string, imageUrl?: string, highlighted?: boolean) => {
     const iconImage = imageUrl || '/vegetable-icon.svg';
+    // In presentation view (when highlightedFarmer prop is passed), default is black, highlighted is orange
+    // In other views, always use the passed color (orange)
+    const isPresentationView = highlightedFarmer !== null && highlightedFarmer !== undefined;
+    const circleFill = isPresentationView ? (highlighted ? 'orange' : 'black') : color;
     const svgIcon = `
       <svg width="40" height="50" viewBox="0 0 40 50" xmlns="http://www.w3.org/2000/svg">
         <path d="M20 0C8.95 0 0 8.95 0 20c0 15 20 30 20 30s20-15 20-30C40 8.95 31.05 0 20 0z" 
               fill="#fff"/>
-        <circle cx="20" cy="20" r="16" fill="${color}"/>
+        <circle cx="20" cy="20" r="16" fill="${circleFill}"/>
         <image x="10" y="10" width="20" height="20" href="${iconImage}" style="clip-path: circle(10px at center);" />
       </svg>
     `;
@@ -268,6 +296,7 @@ export default function MapComponent({
       maxZoom={18}
       style={{ height: "100%", width: "100%" }}
       scrollWheelZoom={false}
+      dragging={mode !== 'meal'}
     >
       {dark ? (
         <>
@@ -280,15 +309,10 @@ export default function MapComponent({
           />
         </>
       ) : (
-        <>
-          <TileLayer
-            attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png"
-          />
-          <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png"
-          />
-        </>
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png"
+        />
       )}
       
       {/* Automatically fit bounds to show all markers */}
@@ -328,7 +352,8 @@ export default function MapComponent({
       {/* Farm markers and lines */}
       {vegetables.map((veg, index) => {
         // Create ingredient-specific icon with custom image if available
-        const ingredientIcon = createCustomIcon('orange', veg.image_url);
+        const isHighlighted = highlightedFarmer === veg.farmer;
+        const ingredientIcon = createCustomIcon('orange', veg.image_url, isHighlighted);
         
         return (
           <div key={index}>
@@ -388,13 +413,13 @@ export default function MapComponent({
                 {address && (
                   <>
                     <span className="text-xs">{address}</span>
-                    <br />
+                    <br /><br />
                   </>
                 )}
                 {farmer.vegetables.length > 0 && (
                   <>
                     <span className="text-xs font-medium">
-                      Vegetables: {farmer.vegetables.join(", ")}
+                      {farmer.vegetables.join(", ")}
                     </span>
                   </>
                 )}

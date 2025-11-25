@@ -442,14 +442,14 @@ export default function EditMealPage() {
                   includeMargin={true}
                 />
               </div>
-              <div className="flex-1">
+              <div className="flex flex-wrap">
                 <p className="text-sm text-gray-600 mb-2">
                   Scannen Sie diesen QR-Code, um die öffentliche Detailseite dieser Mahlzeit anzuzeigen.
                 </p>
                 <p className="text-sm font-mono bg-gray-50 p-2 rounded border border-gray-200 break-all">
                   {typeof window !== 'undefined' ? window.location.origin : ''}/meal/{mealId}
                 </p>
-                <div className="mt-4 flex gap-2">
+                <div className="mt-4 flex gap-2 flex-wrap">
                   <Button
                     variant="outline"
                     size="sm"
@@ -676,7 +676,7 @@ export default function EditMealPage() {
           )}
         </Card>
 
-        <div className="flex gap-4">
+        <div className="flex gap-4 flex-wrap">
           <Button
             onClick={handleSave}
             disabled={saving}

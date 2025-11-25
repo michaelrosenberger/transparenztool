@@ -114,7 +114,7 @@ export function MultiSelectTrigger({
         role={props.role ?? "combobox"}
         aria-expanded={props["aria-expanded"] ?? open}
         className={cn(
-          "flex h-auto min-h-9 w-full hover:bg-transparent items-center justify-between gap-2 overflow-hidden rounded-md border border-grey-2 bg-transparent px-4 py-3 text-base whitespace-nowrap transition-[color,box-shadow] outline-none focus-visible:border-black disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[placeholder]:text-muted-foreground dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground",
+          "flex h-auto min-h-9 w-full hover:bg-transparent items-start justify-between gap-2 rounded-md border border-grey-2 bg-transparent px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base transition-[color,box-shadow] outline-none focus-visible:border-black disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[placeholder]:text-muted-foreground dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground",
           open && "border-black",
           className,
         )}
@@ -144,7 +144,8 @@ export function MultiSelectValue({
 
   const shouldWrap =
     overflowBehavior === "wrap" ||
-    (overflowBehavior === "wrap-when-open" && open)
+    (overflowBehavior === "wrap-when-open" && open) ||
+    true // Always wrap on mobile to prevent overflow
 
   const checkOverflow = useCallback(() => {
     if (valueRef.current == null) return
@@ -206,8 +207,7 @@ export function MultiSelectValue({
       {...props}
       ref={handleResize}
       className={cn(
-        "flex w-full gap-1.5 overflow-hidden",
-        shouldWrap && "h-full flex-wrap",
+        "flex w-full gap-1 sm:gap-1.5 flex-wrap min-w-0",
         className,
       )}
     >
@@ -217,7 +217,7 @@ export function MultiSelectValue({
           <Badge
             variant="default"
             data-selected-item
-            className="group flex items-center gap-1 font-normal tracking-wider"
+            className="group flex items-center gap-0.5 sm:gap-1 font-normal tracking-normal sm:tracking-wider text-xs sm:text-sm px-2 py-0.5"
             key={value}
             onClick={
               clickToRemove
@@ -228,9 +228,9 @@ export function MultiSelectValue({
                 : undefined
             }
           >
-            {items.get(value)}
+            <span className="truncate max-w-[100px] sm:max-w-[200px]">{items.get(value)}</span>
             {clickToRemove && (
-              <XIcon className="size-2 group-hover:text-white" />
+              <XIcon className="size-3 sm:size-2 group-hover:text-white flex-shrink-0" />
             )}
           </Badge>
         ))}
@@ -264,7 +264,7 @@ export function MultiSelectContent({
           <CommandList>{children}</CommandList>
         </Command>
       </div>
-      <PopoverContent className="min-w-[var(--radix-popover-trigger-width)] p-0">
+      <PopoverContent className="min-w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] p-0">
         <Command {...props}>
           {canSearch ? (
             <CommandInput

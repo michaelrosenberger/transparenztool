@@ -18,7 +18,6 @@ const MapComponent = dynamic(() => import("@/app/components/MapComponent"), {
 interface FarmerProfile {
   user_id: string;
   full_name: string;
-  profile_image?: string;
   business_images?: string[];
   featured_image_index?: number;
   street?: string;
@@ -66,7 +65,6 @@ export default function DemoPage() {
       const farmerProfiles: FarmerProfile[] = (data || []).map((farmer: any) => ({
         user_id: farmer.user_id,
         full_name: farmer.full_name || "Produzent",
-        profile_image: farmer.profile_image,
         business_images: farmer.business_images || [],
         featured_image_index: farmer.featured_image_index || 0,
         street: farmer.street,
@@ -111,7 +109,7 @@ export default function DemoPage() {
             // Get featured image or fall back to profile image
             const featuredImage = farmer.business_images && farmer.business_images.length > 0
               ? farmer.business_images[farmer.featured_image_index || 0]
-              : farmer.profile_image;
+              : undefined;
 
             return (
               <Link key={farmer.user_id} href={`/produzent/${farmer.user_id}`} className="no-underline">

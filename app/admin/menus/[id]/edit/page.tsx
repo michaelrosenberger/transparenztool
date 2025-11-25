@@ -247,7 +247,7 @@ export default function EditMenuPage() {
           {/* Meal Selection */}
           <div className="space-y-2">
             <Label>Mahlzeiten auswählen *</Label>
-            <div className="border rounded-md p-4 max-h-96 overflow-y-auto space-y-3">
+            <div className="border border-grey-2 rounded-md p-4 max-h-60 overflow-y-auto space-y-3">
               {meals.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   Keine Mahlzeiten verfügbar.
@@ -266,7 +266,7 @@ export default function EditMenuPage() {
                     <div className="flex-1">
                       <label
                         htmlFor={meal.id}
-                        className="text-sm font-medium leading-none cursor-pointer"
+                        className="leading-none cursor-pointer"
                       >
                         {meal.name}
                       </label>

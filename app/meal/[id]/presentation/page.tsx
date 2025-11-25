@@ -11,13 +11,6 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import dynamic from "next/dynamic";
 import { MapPin } from "lucide-react";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 
 // Dynamically import map component to avoid SSR issues
 const MapComponent = dynamic(() => import("@/app/components/MapComponent"), {
@@ -51,7 +44,6 @@ interface FarmerProfile {
   full_name: string;
   business_images?: string[];
   featured_image_index?: number;
-  profile_image?: string;
 }
 
 export default function PresenationMealDetailPage() {
@@ -59,6 +51,8 @@ export default function PresenationMealDetailPage() {
   const [meal, setMeal] = useState<Meal | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [farmerProfiles, setFarmerProfiles] = useState<Map<string, FarmerProfile>>(new Map());
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   
   const params = useParams();
   const supabase = useMemo(() => createClient(), []);
@@ -83,7 +77,7 @@ export default function PresenationMealDetailPage() {
               console.error("Error getting location:", error);
             },
             {
-              timeout: 5000,
+              timeout: 10000,
               enableHighAccuracy: false,
               maximumAge: 300000
             }
@@ -101,6 +95,25 @@ export default function PresenationMealDetailPage() {
     loadMealData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mealId]);
+
+  // Autoplay with fade effect
+  useEffect(() => {
+    if (!meal) return;
+
+    const uniqueFarmersCount = Array.from(new Map(meal.vegetables.map(veg => [veg.farmer_name, veg])).values()).length;
+    if (uniqueFarmersCount === 0) return;
+
+    const autoplay = setInterval(() => {
+      setIsTransitioning(true);
+      
+      setTimeout(() => {
+        setCurrentSlideIndex((prev) => (prev + 1) % uniqueFarmersCount);
+        setIsTransitioning(false);
+      }, 300); // Half of transition duration for crossfade effect
+    }, 10000); // Change slide every 5 seconds
+
+    return () => clearInterval(autoplay);
+  }, [meal]);
 
   const loadMeal = async (id: string) => {
     try {
@@ -139,12 +152,26 @@ export default function PresenationMealDetailPage() {
       // Create a map of farmer name to profile
       const profileMap = new Map<string, FarmerProfile>();
       (data || []).forEach((farmer: any) => {
+        // Ensure business_images is an array
+        let businessImages = [];
+        if (farmer.business_images) {
+          if (Array.isArray(farmer.business_images)) {
+            businessImages = farmer.business_images;
+          } else if (typeof farmer.business_images === 'string') {
+            try {
+              businessImages = JSON.parse(farmer.business_images);
+            } catch (e) {
+              console.error("Error parsing business_images for", farmer.full_name, e);
+              businessImages = [];
+            }
+          }
+        }
+
         profileMap.set(farmer.full_name, {
           user_id: farmer.user_id,
           full_name: farmer.full_name,
-          business_images: farmer.business_images || [],
+          business_images: businessImages,
           featured_image_index: farmer.featured_image_index || 0,
-          profile_image: farmer.profile_image,
         });
       });
 
@@ -225,111 +252,34 @@ export default function PresenationMealDetailPage() {
     image_url: veg.image_url
   }));
 
+  // Get unique farmers list for carousel
+  const uniqueFarmers = Array.from(new Map(transformedVegetables.map(veg => [veg.farmer, veg])).values());
+  const highlightedFarmer = uniqueFarmers[currentSlideIndex]?.farmer || null;
+
   return (
     <>
       <Container dark fullWidth>
         <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
-          <div className="mb-4">
+          <div className="">
             <h1>{meal.name}</h1>
             <p>{meal.description}</p>
           </div>
-        </div>
-
-        <div className="h-screen overflow-hidden relative z-40 mb-6">
-          <MapComponent dark
-            vegetables={transformedVegetables}
-            userLocation={userLocation}
-            storageLocation={{ 
-              lat: meal.storage_lat, 
-              lng: meal.storage_lng, 
-              address: meal.storage_address,
-              name: meal.storage_name
-            }}
-            mealName={meal.name}
-          />
-        </div>
-
-        <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 mb-12">
           <button
             onClick={() => {
               const ingredientsSection = document.getElementById('ingredients-section');
               ingredientsSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }}
-            className="flex items-center max-sm:w-full justify-center gap-2 px-3 max-sm:px-2 py-3 cursor-pointer mx-auto bg-white text-sm lg:text-base text-black rounded-full font-medium hover:bg-gray-100 transition-colors"
+            className="flex items-center justify-center gap-2 px-3 max-sm:px-2 py-3 cursor-pointer bg-white text-sm lg:text-base text-black rounded-full font-medium hover:bg-gray-100 transition-colors"
           >
             <MapPin className="h-3 w-3 lg:h-5 lg:w-5" />
             Deine Zutaten sind ~ {calculateAverageDistance()} km zu dir gereist
           </button>
-        </div>   
+        </div>
 
-        {/* Ingredients */}
-        <div 
-          id="ingredients-section"
-          className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
-          <h2 className="mb-8">Zutatenherkünfte</h2>
-          <div className="space-y-3">
-            {transformedVegetables.map((veg, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  const farmerId = `farmer-${veg.farmer.replace(/\s+/g, '-').toLowerCase()}`;
-                  const farmerCard = document.getElementById(farmerId);
-                  farmerCard?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }}
-                className="block w-full text-left"
-              >
-                <Card noBorder className="p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h4 className="text-lg font-medium mb-2">{veg.vegetable}</h4>
-                      <div className="flex items-center gap-1 text-sm mb-1">
-                        <MapPin className="h-4 w-4" />
-                        <span>ca. {veg.distance.toFixed(1)}km entfernt</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-sm">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="flex-shrink-0"
-                        >
-                          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                          <circle cx="12" cy="7" r="4" />
-                        </svg>
-                        <span>{veg.farmer} | {veg.location.address}</span>
-                      </div>
-                    </div>
-                    <div className="ml-4">
-                      <svg 
-                        className="h-6 w-6" 
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </div>
-                  </div>
-                </Card>
-              </button>
-            ))}
-          </div>
-        </div>       
-      </Container>
-
-      <Container asPage>
-        <h2 className="mb-8">Die Produzenten</h2>
-        
-        <Carousel className="w-full mb-8">
-          <CarouselContent>
-            {/* Get unique farmers from vegetables */}
-            {Array.from(new Map(transformedVegetables.map(veg => [veg.farmer, veg])).values()).map((veg, index) => {
+        <div className="h-screen overflow-hidden relative z-40 mb-6">
+          <div className="w-1/4 mb-8 relative z-1000 top-[20%] ml-8">
+          {/* Get unique farmers from vegetables */}
+          {uniqueFarmers.map((veg, index) => {
               const farmerName = veg.farmer;
               const farmerAddress = veg.location.address;
               // Get all vegetables from this farmer
@@ -341,8 +291,10 @@ export default function PresenationMealDetailPage() {
               const farmerProfile = farmerProfiles.get(farmerName);
               const featuredImage = farmerProfile?.business_images && farmerProfile.business_images.length > 0
                 ? farmerProfile.business_images[farmerProfile.featured_image_index || 0]
-                : farmerProfile?.profile_image;
+                : undefined;
 
+              const isActive = index === currentSlideIndex;
+              
               const cardContent = (
                 <Card 
                   className={farmerProfile?.user_id ? "cursor-pointer hover:shadow-lg transition-shadow h-full" : "h-full"}
@@ -389,7 +341,14 @@ export default function PresenationMealDetailPage() {
               );
 
               return (
-                <CarouselItem key={index}>
+                <div
+                  key={index}
+                  className="absolute inset-0 transition-opacity duration-700 ease-in-out"
+                  style={{
+                    opacity: isActive ? (isTransitioning ? 0 : 1) : 0,
+                    pointerEvents: isActive ? 'auto' : 'none',
+                  }}
+                >
                   {farmerProfile?.user_id ? (
                     <Link href={`/produzent/${farmerProfile.user_id}`} className="no-underline block">
                       {cardContent}
@@ -397,20 +356,23 @@ export default function PresenationMealDetailPage() {
                   ) : (
                     <div>{cardContent}</div>
                   )}
-                </CarouselItem>
+                </div>
               );
             })}
-          </CarouselContent>
-          <CarouselPrevious />
-          <CarouselNext />
-        </Carousel>
-
-        <div className="grid gap-8">
-          <h2>So funktioniert unser Versprechen:</h2>
-          <p>Wir vermarkten Lebensmittel von Produzenten direkt an Küchen.</p>
-          <p>jazunah.at ist das Bindeglied zwischen der Landwirtschaft und Großküchen in Österreich. Die Produzenten bestimmen die Preise ihrer hochwertigen Erzeugnisse selbst – wir kümmern uns um den Weg vom Feld in die Küche. Für Köche bedeutet das: Frische, erstklassige Zutaten, welche die regionale Wirtschaft stärken und  den Geschmack der Region auf den Teller bringen. </p>
-          <i>Für Produzenten, für Köche, für uns alle.</i>
         </div>
+          <MapComponent dark
+            vegetables={transformedVegetables}
+            userLocation={userLocation}
+            storageLocation={{ 
+              lat: meal.storage_lat, 
+              lng: meal.storage_lng, 
+              address: meal.storage_address,
+              name: meal.storage_name
+            }}
+            mealName={meal.name}
+            highlightedFarmer={highlightedFarmer}
+          />
+        </div>       
       </Container>
     </>
   );

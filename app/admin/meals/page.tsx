@@ -703,7 +703,7 @@ export default function AdminMealsPage() {
           )}
         </Card>
 
-        <div className="flex gap-4">
+        <div className="flex gap-4 flex-wrap">
           <Button
             onClick={handleSubmit}
             disabled={submitting}
