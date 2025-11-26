@@ -140,14 +140,20 @@ export async function PATCH(
     const { data: currentUser, error: getUserError } = await supabaseAdmin.auth.admin.getUserById(userId);
     
     if (getUserError) {
+      console.error("Error getting user:", getUserError);
       return NextResponse.json({ error: getUserError.message }, { status: 500 });
     }
+
+    console.log("Current user metadata:", currentUser.user.user_metadata);
+    console.log("Update body:", body);
 
     // Merge existing metadata with new data
     const mergedMetadata = {
       ...currentUser.user.user_metadata,
       ...body.user_metadata,
     };
+
+    console.log("Merged metadata:", mergedMetadata);
 
     // Update user metadata
     const { data, error } = await supabaseAdmin.auth.admin.updateUserById(
@@ -158,9 +164,11 @@ export async function PATCH(
     );
     
     if (error) {
+      console.error("Error updating user:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    console.log("Updated user metadata:", data.user.user_metadata);
     return NextResponse.json({ user: data.user });
   } catch (error) {
     return NextResponse.json({ error: "Failed to update user" }, { status: 500 });

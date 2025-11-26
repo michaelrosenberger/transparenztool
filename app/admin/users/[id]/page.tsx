@@ -220,13 +220,15 @@ export default function EditUserPage() {
     setSaving(true);
     try {
       const updateData = {
-        full_name: editForm.full_name,
-        occupation: editForm.occupation,
-        street: editForm.street,
-        zip_code: editForm.zip_code,
-        city: editForm.city,
-        ingredients: ingredients,
-        address_coordinates: editForm.address_coordinates,
+        user_metadata: {
+          full_name: editForm.full_name,
+          occupation: editForm.occupation,
+          street: editForm.street,
+          zip_code: editForm.zip_code,
+          city: editForm.city,
+          vegetables: ingredients,
+          address_coordinates: editForm.address_coordinates,
+        }
       };
 
       const response = await fetch(`/api/admin/users/${userData.id}`, {
@@ -235,14 +237,26 @@ export default function EditUserPage() {
         body: JSON.stringify(updateData),
       });
 
-      if (!response.ok) throw new Error("Update failed");
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Update error:", errorData);
+        throw new Error(errorData.error || "Update failed");
+      }
+
+      const result = await response.json();
+      console.log("Update successful:", result);
 
       setMessage({ type: "success", text: "Benutzer erfolgreich aktualisiert" });
+      
+      // Reload user data to verify the update
+      await loadUser();
+      
       setTimeout(() => {
         router.push("/admin/overview");
       }, 1500);
-    } catch (error) {
-      setMessage({ type: "error", text: "Fehler beim Aktualisieren des Benutzers" });
+    } catch (error: any) {
+      console.error("Save user error:", error);
+      setMessage({ type: "error", text: error.message || "Fehler beim Aktualisieren des Benutzers" });
     } finally {
       setSaving(false);
     }
