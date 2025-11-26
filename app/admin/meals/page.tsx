@@ -420,7 +420,6 @@ export default function AdminMealsPage() {
         storage_lng: storageLng,
         vegetables: selectedVegetables,
         created_by: user.id,
-        created_at: new Date().toISOString(),
       };
 
       const { data, error } = await supabase
