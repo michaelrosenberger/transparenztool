@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { checkAdminAuth } from "@/lib/auth/checkAdminAuth";
 import { useRouter } from "next/navigation";
 import Card from "@/app/components/Card";
 import Container from "@/app/components/Container";
@@ -83,33 +84,19 @@ export default function AdminMealsPage() {
   const [createdMealId, setCreatedMealId] = useState<string | null>(null);
   
   const router = useRouter();
-  const supabase = useMemo(() => createClient(), []);
+  const supabase = createClient();
 
   useEffect(() => {
     const checkUserAndLoadData = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { user, isAdmin } = await checkAdminAuth();
         
         if (!user) {
           router.push("/login");
           return;
         }
 
-        // Check admin role from user_roles table
-        const { data: roleData, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .eq('role', 'admin')
-          .maybeSingle();
-
-        if (error) {
-          console.error('Error checking admin role:', error.message);
-          router.push("/");
-          return;
-        }
-
-        if (!roleData) {
+        if (!isAdmin) {
           router.push("/");
           return;
         }
@@ -126,13 +113,8 @@ export default function AdminMealsPage() {
         
         if (defaultStorageAddress) {
           setStorageAddress(defaultStorageAddress);
-          // Validate the default address (don't block on error)
-          try {
-            await validateAddress(defaultStorageAddress);
-          } catch (error) {
-            console.error("Error validating default storage address:", error);
-            // Continue loading even if validation fails
-          }
+          // Don't validate on load - only validate when user manually triggers it
+          // This prevents blocking when multiple tabs are open
         }
         
         await loadFarmers();

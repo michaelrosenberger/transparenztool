@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { checkAdminAuth } from "@/lib/auth/checkAdminAuth";
 import { useRouter, useParams } from "next/navigation";
 import Card from "@/app/components/Card";
 import Container from "@/app/components/Container";
@@ -48,28 +49,20 @@ export default function EditMenuPage() {
 
   const router = useRouter();
   const params = useParams();
-  const supabase = useMemo(() => createClient(), []);
+  const supabase = createClient();
   const menuId = params.id as string;
 
   useEffect(() => {
     const checkUserAndLoadData = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { user, isAdmin } = await checkAdminAuth();
         
         if (!user) {
           router.push("/login");
           return;
         }
 
-        // Check admin role
-        const { data: roleData, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .eq('role', 'admin')
-          .maybeSingle();
-
-        if (error || !roleData) {
+        if (!isAdmin) {
           router.push("/");
           return;
         }
@@ -85,7 +78,8 @@ export default function EditMenuPage() {
     };
 
     checkUserAndLoadData();
-  }, [menuId, router, supabase]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [menuId]);
 
   const loadMeals = async () => {
     try {

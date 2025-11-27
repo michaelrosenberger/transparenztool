@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { checkAdminAuth } from "@/lib/auth/checkAdminAuth";
 import { useRouter, useParams } from "next/navigation";
 import Container from "@/app/components/Container";
 import Card from "@/app/components/Card";
@@ -64,14 +65,14 @@ export default function EditProducentPage() {
   const router = useRouter();
   const params = useParams();
   const userId = params.id as string;
-  const supabase = useMemo(() => createClient(), []);
+  const supabase = createClient();
 
   useEffect(() => {
     let isMounted = true;
 
     const checkAdminAndLoadData = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { user, isAdmin } = await checkAdminAuth();
         
         if (!isMounted) return;
         
@@ -80,23 +81,9 @@ export default function EditProducentPage() {
           return;
         }
 
-        // Check admin role from user_roles table
-        const { data: roleData, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .eq('role', 'admin')
-          .maybeSingle();
-
         if (!isMounted) return;
 
-        if (error) {
-          console.error('Error checking admin role:', error.message);
-          router.push("/");
-          return;
-        }
-
-        if (!roleData) {
+        if (!isAdmin) {
           router.push("/");
           return;
         }

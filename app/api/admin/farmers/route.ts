@@ -2,6 +2,11 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
+// Cache for farmers list to prevent concurrent duplicate requests
+let farmersCache: { data: any; timestamp: number } | null = null;
+let farmersFetchPromise: Promise<any> | null = null;
+const CACHE_DURATION = 60000; // 60 seconds - increased to handle multiple tab opens
+
 export async function GET(request: Request) {
   try {
     // Use server client to get authenticated user from cookies
@@ -24,56 +29,77 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
     }
 
-    // Create a Supabase client with service role key for admin operations
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
-    );
-
-    // Get all users
-    const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();
-
-    if (error) {
-      console.error("Error fetching users:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    // Return cached data if still valid
+    if (farmersCache && Date.now() - farmersCache.timestamp < CACHE_DURATION) {
+      return NextResponse.json({ farmers: farmersCache.data });
     }
 
-    // Filter for farmers with vegetables and valid address coordinates
-    const farmers = (users || [])
-      .filter((user) => {
-        const metadata = user.user_metadata;
-        return (
-          metadata?.occupation === "Produzenten" &&
-          metadata?.vegetables &&
-          Array.isArray(metadata.vegetables) &&
-          metadata.vegetables.length > 0 &&
-          metadata?.address_coordinates?.lat &&
-          metadata?.address_coordinates?.lng
-        );
-      })
-      .map((user) => {
-        const metadata = user.user_metadata;
-        const coords = metadata.address_coordinates;
-        const address = [metadata.street, metadata.zip_code, metadata.city]
-          .filter(Boolean)
-          .join(", ");
-        
-        return {
-          id: user.id,
-          full_name: metadata.business_name || metadata.full_name || "Unbekannter Produzent",
-          vegetables: metadata.vegetables,
-          address: address,
-          lat: coords.lat,
-          lng: coords.lng,
-        };
-      });
+    // If there's already a pending fetch, wait for it
+    if (farmersFetchPromise) {
+      const farmers = await farmersFetchPromise;
+      return NextResponse.json({ farmers });
+    }
 
+    // Create new fetch promise
+    farmersFetchPromise = (async () => {
+      // Create a Supabase client with service role key for admin operations
+      const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+          },
+        }
+      );
+
+      // Get all users
+      const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();
+
+      if (error) {
+        console.error("Error fetching users:", error);
+        farmersFetchPromise = null;
+        throw error;
+      }
+
+      // Filter for farmers with vegetables and valid address coordinates
+      const farmers = (users || [])
+        .filter((user) => {
+          const metadata = user.user_metadata;
+          return (
+            metadata?.occupation === "Produzenten" &&
+            metadata?.vegetables &&
+            Array.isArray(metadata.vegetables) &&
+            metadata.vegetables.length > 0 &&
+            metadata?.address_coordinates?.lat &&
+            metadata?.address_coordinates?.lng
+          );
+        })
+        .map((user) => {
+          const metadata = user.user_metadata;
+          const coords = metadata.address_coordinates;
+          const address = [metadata.street, metadata.zip_code, metadata.city]
+            .filter(Boolean)
+            .join(", ");
+          
+          return {
+            id: user.id,
+            full_name: metadata.business_name || metadata.full_name || "Unbekannter Produzent",
+            vegetables: metadata.vegetables,
+            address: address,
+            lat: coords.lat,
+            lng: coords.lng,
+          };
+        });
+
+      // Cache the result
+      farmersCache = { data: farmers, timestamp: Date.now() };
+      farmersFetchPromise = null;
+      return farmers;
+    })();
+
+    const farmers = await farmersFetchPromise;
     return NextResponse.json({ farmers });
   } catch (error: any) {
     console.error("API error:", error);

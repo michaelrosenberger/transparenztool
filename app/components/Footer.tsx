@@ -30,7 +30,7 @@ export default function Footer() {
             <h3 className="mb-4">Kontakt</h3>
             <div className="space-y-2">
               <div>
-                <p>ja zu nah GmbH JZN</p>
+                <p>ja zu nah GmbH</p>
                 <p>Wiener Straße 64</p>
                 <p>3100 St. Pölten</p>
               </div>
@@ -56,7 +56,7 @@ export default function Footer() {
             <div className="space-y-2">
               <div>
                 <p className="">Montag bis Donnerstag:</p>
-                <p>08:00 - 16:00 Uhr</p>
+                <p>08:00 - 15:00 Uhr</p>
               </div>
               <div className="mt-4">
                 <p className="">Freitag:</p>
@@ -72,7 +72,7 @@ export default function Footer() {
         {/* Accordion Sections - Mobile */}
         <div className="space-y-4 mb-12">
           {/* Mein Account */}
-          <div className="rounded-lg overflow-hidden">
+          {/*<div className="rounded-lg overflow-hidden">
             <button
               onClick={() => setAccountOpen(!accountOpen)}
               className="w-full flex items-center justify-between rounded-lg py-5 px-6 text-left bg-[rgba(44,44,44,1)] hover:bg-[rgba(34,34,34,1)] transition-colors"
@@ -88,7 +88,7 @@ export default function Footer() {
                 <Link href="#" className="block hover:underline">Zahlung und Versand</Link>
               </div>
             )}
-          </div>
+          </div>*/}
 
           {/* So einfach ist regional */}
           <div className="rounded-lg overflow-hidden">
@@ -101,9 +101,9 @@ export default function Footer() {
             </button>
             {regionalOpen && (
               <div className="p-6 space-y-3">
-                <Link href="#" className="block hover:underline">Über uns</Link>
-                <Link href="#" className="block hover:underline">Wie es funktioniert</Link>
-                <Link href="#" className="block hover:underline">Unsere Partner</Link>
+                <Link href="https://www.jazunah.at/fuer-landwirte/" className="block hover:underline">Für Landwirte</Link>
+                <Link href="https://www.jazunah.at/fuer-kuechen/" className="block hover:underline">Für Küchen</Link>
+                <Link href="https://www.jazunah.at/ueber-uns/" className="block hover:underline">Unsere Story</Link>
               </div>
             )}
           </div>
@@ -119,9 +119,8 @@ export default function Footer() {
             </button>
             {producersOpen && (
               <div className="p-6 space-y-3">
-                <Link href="#" className="block hover:underline">Alle Produzenten</Link>
-                <Link href="#" className="block hover:underline">Produzent werden</Link>
-                <Link href="#" className="block hover:underline">Qualitätsstandards</Link>
+                <Link href="https://www.jazunah.at/produzenten/" className="block hover:underline">Unsere Produzenten</Link>
+                <Link href="https://shop.jazunah.at/outliner/login" className="block hover:underline">Produzentenportal</Link>
               </div>
             )}
           </div>
@@ -129,45 +128,44 @@ export default function Footer() {
 
         {/* Social Media Icons */}
         <div className="flex justify-center gap-6 mb-8 flex-wrap">
-          <Link href="#" className="hover:opacity-80 transition-opacity border-2 border-white rounded-full p-2" aria-label="Instagram">
+          {/*<Link href="#" className="hover:opacity-80 transition-opacity border-2 border-white rounded-full p-2" aria-label="Instagram">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
               <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
               <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
             </svg>
-          </Link>
-          <Link href="#" className="hover:opacity-80 transition-opacity border-2 border-white rounded-full p-2" aria-label="Facebook">
+          </Link>*/}
+          <Link href="https://www.facebook.com/people/JA-ZU-NAH/100093037316720/" className="hover:opacity-80 transition-opacity border-2 border-white rounded-full p-2" aria-label="Facebook">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
             </svg>
           </Link>
-          <Link href="#" className="hover:opacity-80 transition-opacity border-2 border-white rounded-full p-2" aria-label="LinkedIn">
+          <Link href="https://www.linkedin.com/company/jazunah/" className="hover:opacity-80 transition-opacity border-2 border-white rounded-full p-2" aria-label="LinkedIn">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
               <rect width="4" height="12" x="2" y="9"/>
               <circle cx="4" cy="4" r="2"/>
             </svg>
           </Link>
-          <Link href="#" className="hover:opacity-80 transition-opacity border-2 border-white rounded-full p-2" aria-label="YouTube">
+          {/*<Link href="#" className="hover:opacity-80 transition-opacity border-2 border-white rounded-full p-2" aria-label="YouTube">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/>
               <path d="m10 15 5-3-5-3z"/>
             </svg>
-          </Link>
+          </Link>*/}
         </div>
 
         {/* Legal Links */}
-        <div className="flex flex-wrap justify-center gap-4 mb-8">
+        {/*<div className="flex flex-wrap justify-center gap-4 mb-8">
           <Link href="#" className="hover:underline">Widerrufsrecht</Link>
           <Link href="#" className="hover:underline">AGB</Link>
           <Link href="#" className="hover:underline">Impressum</Link>
           <Link href="#" className="hover:underline">Datenschutz</Link>
-        </div>
+        </div>*/}
 
         {/* Copyright */}
         <div className="text-center">
           <p>© 2025 ja zu nah GmbH</p>
-          <p className="mt-2">made by LEMONTEC & MSTAGE</p>
         </div>
 
       </div>

@@ -31,7 +31,6 @@ export default function TodayMenuPage() {
   const [loading, setLoading] = useState(true);
   const [menu, setMenu] = useState<Menu | null>(null);
   const [meals, setMeals] = useState<Meal[]>([]);
-  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     loadTodayMenu();
@@ -39,43 +38,18 @@ export default function TodayMenuPage() {
 
   const loadTodayMenu = async () => {
     try {
-      // Fetch the today menu
-      const { data: menuData, error: menuError } = await supabase
-        .from("meal_menus")
-        .select("*")
-        .eq("is_today", true)
-        .single();
-
-      if (menuError) {
-        console.error("Error loading today menu:", menuError);
+      const response = await fetch('/api/menus/today');
+      
+      if (!response.ok) {
+        console.error("Error loading today menu:", response.statusText);
         setLoading(false);
         return;
       }
 
-      if (!menuData) {
-        setLoading(false);
-        return;
-      }
+      const { menu: menuData, meals: mealsData } = await response.json();
 
       setMenu(menuData);
-
-      // Fetch the meals for this menu
-      if (menuData.meal_ids && menuData.meal_ids.length > 0) {
-        const { data: mealsData, error: mealsError } = await supabase
-          .from("meals")
-          .select("*")
-          .in("id", menuData.meal_ids);
-
-        if (mealsError) {
-          console.error("Error loading meals:", mealsError);
-        } else if (mealsData) {
-          // Sort meals by the order in meal_ids
-          const sortedMeals = menuData.meal_ids
-            .map((id: string) => (mealsData as Meal[]).find((meal: Meal) => meal.id === id))
-            .filter((meal: Meal | undefined): meal is Meal => meal !== undefined);
-          setMeals(sortedMeals);
-        }
-      }
+      setMeals(mealsData || []);
     } catch (error) {
       console.error("Error loading today menu:", error);
     } finally {

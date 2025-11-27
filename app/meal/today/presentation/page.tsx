@@ -1,8 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { useParams } from "next/navigation";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Card from "@/app/components/Card";
 import Container from "@/app/components/Container";
@@ -55,10 +53,6 @@ export default function PresenationMealDetailPage() {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   
-  const params = useParams();
-  const supabase = useMemo(() => createClient(), []);
-  const mealId = params.id as string;
-
   useEffect(() => {
     const loadMealData = async () => {
       try {
@@ -85,7 +79,7 @@ export default function PresenationMealDetailPage() {
           );
         }
 
-        await loadMeal(mealId);
+        await loadTodayMeal();
       } catch (error) {
         console.error("Error in loadMealData:", error);
       } finally {
@@ -95,7 +89,7 @@ export default function PresenationMealDetailPage() {
 
     loadMealData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mealId]);
+  }, []);
 
   // Autoplay with fade effect
   useEffect(() => {
@@ -116,16 +110,18 @@ export default function PresenationMealDetailPage() {
     return () => clearInterval(autoplay);
   }, [meal]);
 
-  const loadMeal = async (id: string) => {
+  const loadTodayMeal = async () => {
     try {
-      const { data, error } = await supabase
-        .from("meals")
-        .select("*")
-        .eq("id", id)
-        .single();
+      const response = await fetch('/api/meals/today');
+      
+      if (!response.ok) {
+        console.error("Error loading today meal:", response.statusText);
+        return;
+      }
 
-      if (error) {
-        console.error("Error loading meal:", error);
+      const { meal: data } = await response.json();
+
+      if (!data) {
         return;
       }
 
@@ -136,19 +132,27 @@ export default function PresenationMealDetailPage() {
         await loadFarmerProfiles(data.vegetables);
       }
     } catch (error) {
-      console.error("Error loading meal:", error);
+      console.error("Error loading today meal:", error);
     }
   };
 
   const loadFarmerProfiles = async (vegetables: VegetableSource[]) => {
     try {
-      // Get all farmer profiles
-      const { data, error } = await supabase.rpc("get_farmer_profiles");
+      // Use a timeout to prevent hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
       
-      if (error) {
-        console.error("Error loading farmer profiles:", error);
+      const response = await fetch('/api/admin/farmers', {
+        signal: controller.signal
+      }).catch(() => null);
+      
+      clearTimeout(timeoutId);
+      
+      if (!response || !response.ok) {
         return;
       }
+
+      const { farmers: data } = await response.json();
 
       // Create a map of farmer name to profile
       const profileMap = new Map<string, FarmerProfile>();
@@ -385,13 +389,13 @@ export default function PresenationMealDetailPage() {
                   <h2 className="text-3xl font-bold">Mehr erfahren</h2>
                 </div>
                 <p className="text-lg mb-4">
-                  Scanne den QR-Code, um mehr Details über diese Mahlzeit zu erfahren.
+                  Scanne den QR-Code, um mehr Details über die heutige Mahlzeit zu erfahren.
                 </p>
               </div>
               <div className="flex-shrink-0">
                 <div className="bg-white p-6 rounded-lg shadow-lg">
                   <QRCodeSVG
-                    value={`${typeof window !== 'undefined' ? window.location.origin : ''}/meal/${mealId}`}
+                    value={`${typeof window !== 'undefined' ? window.location.origin : ''}/meal/today`}
                     size={200}
                     level="H"
                     includeMargin={true}

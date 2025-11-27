@@ -35,39 +35,23 @@ export default function PublicMenuDetailPage() {
   const [meals, setMeals] = useState<Meal[]>([]);
   
   const params = useParams();
-  const supabase = useMemo(() => createClient(), []);
   const menuId = params.id as string;
 
   useEffect(() => {
     const loadMenuData = async () => {
       try {
-        // Load menu
-        const { data: menuData, error: menuError } = await supabase
-          .from("meal_menus")
-          .select("*")
-          .eq("id", menuId)
-          .single();
-
-        if (menuError) throw menuError;
-        setMenu(menuData);
-
-        // Load meals
-        if (menuData.meal_ids && menuData.meal_ids.length > 0) {
-          const { data: mealsData, error: mealsError } = await supabase
-            .from("meals")
-            .select("id, name, description, vegetables")
-            .in("id", menuData.meal_ids);
-
-          if (mealsError) throw mealsError;
-
-          // Sort meals according to meal_ids order
-          const sortedMeals = menuData.meal_ids
-            .map((id: string) => mealsData?.find((m: Meal) => m.id === id))
-            .filter((m: Meal | undefined): m is Meal => m !== undefined);
-
-          setMeals(sortedMeals);
+        const response = await fetch(`/api/menus/${menuId}`);
+        
+        if (!response.ok) {
+          console.error("Error loading menu:", response.statusText);
+          setLoading(false);
+          return;
         }
 
+        const { menu: menuData, meals: mealsData } = await response.json();
+        
+        setMenu(menuData);
+        setMeals(mealsData || []);
         setLoading(false);
       } catch (error) {
         console.error("Error loading menu:", error);
@@ -76,7 +60,7 @@ export default function PublicMenuDetailPage() {
     };
 
     loadMenuData();
-  }, [menuId, supabase]);
+  }, [menuId]);
 
   if (loading) {
     return <PageSkeleton />;

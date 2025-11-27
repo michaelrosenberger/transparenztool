@@ -20,30 +20,25 @@ export default function Header() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
-  const supabase = useMemo(() => createClient(), []);
+  const supabase = createClient();
 
   useEffect(() => {
-    // Get initial user
+    // Get initial user and admin status via API
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      
-      if (user) {
-        // Check admin status from user_roles table
-        const { data: roleData, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .eq('role', 'admin')
-          .maybeSingle();
+      try {
+        const response = await fetch('/api/auth/check');
         
-        if (error) {
-          console.warn('user_roles table not found or error:', error.message);
-          setIsAdmin(false);
+        if (response.ok) {
+          const { user, isAdmin } = await response.json();
+          setUser(user);
+          setIsAdmin(isAdmin);
         } else {
-          setIsAdmin(!!roleData);
+          setUser(null);
+          setIsAdmin(false);
         }
-      } else {
+      } catch (error) {
+        console.error('Error checking auth:', error);
+        setUser(null);
         setIsAdmin(false);
       }
       
@@ -56,19 +51,19 @@ export default function Header() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
       
+      // Re-check admin status via API when auth state changes
       if (session?.user) {
-        const { data: roleData, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .eq('role', 'admin')
-          .maybeSingle();
-        
-        if (error) {
-          console.warn('user_roles table not found or error:', error.message);
+        try {
+          const response = await fetch('/api/auth/check');
+          if (response.ok) {
+            const { isAdmin } = await response.json();
+            setIsAdmin(isAdmin);
+          } else {
+            setIsAdmin(false);
+          }
+        } catch (error) {
+          console.error('Error checking admin status:', error);
           setIsAdmin(false);
-        } else {
-          setIsAdmin(!!roleData);
         }
       } else {
         setIsAdmin(false);
@@ -127,7 +122,7 @@ export default function Header() {
               </Link>
             )}
             {/* User Icon - Always visible, links to profile or login */}
-            {!loading && (
+            {/*{!loading && (
               <Link
                 href={user ? "/profile" : "/login"}
                 className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors text-black"
@@ -148,10 +143,10 @@ export default function Header() {
                   <circle cx="12" cy="7" r="4" />
                 </svg>
               </Link>
-            )}
+            )}*/}
 
             {/* Dropdown Menu */}
-            <DropdownMenu>
+            {/*<DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" aria-label="Menu" className="pr-0 -mr-3">
                   <svg
@@ -227,7 +222,7 @@ export default function Header() {
                   </>
                 )}
               </DropdownMenuContent>
-            </DropdownMenu>
+            </DropdownMenu>*/}
             </div>
           </div>
         </div>

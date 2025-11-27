@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { checkAdminAuth } from "@/lib/auth/checkAdminAuth";
 import Card from "@/app/components/Card";
 import Container from "@/app/components/Container";
 import PageSkeleton from "@/app/components/PageSkeleton";
@@ -50,7 +51,7 @@ export default function EditUserPage() {
   const router = useRouter();
   const params = useParams();
   const userId = params.id as string;
-  const supabase = useMemo(() => createClient(), []);
+  const supabase = createClient();
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -68,28 +69,14 @@ export default function EditUserPage() {
   useEffect(() => {
     const checkUserAndLoadData = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { user, isAdmin } = await checkAdminAuth();
         
         if (!user) {
           router.push("/login");
           return;
         }
 
-        // Check admin role from user_roles table
-        const { data: roleData, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .eq('role', 'admin')
-          .maybeSingle();
-
-        if (error) {
-          console.error('Error checking admin role:', error.message);
-          router.push("/");
-          return;
-        }
-
-        if (!roleData) {
+        if (!isAdmin) {
           router.push("/");
           return;
         }

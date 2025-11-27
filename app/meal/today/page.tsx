@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useParams } from "next/navigation";
 import Link from "next/link";
 import Card from "@/app/components/Card";
 import Container from "@/app/components/Container";
 import PageSkeleton from "@/app/components/PageSkeleton";
+import VideoPopup from "@/app/components/VideoPopup";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import dynamic from "next/dynamic";
@@ -46,15 +46,13 @@ interface FarmerProfile {
   featured_image_index?: number;
 }
 
-export default function PublicMealDetailPage() {
+export default function TodayMealPage() {
   const [loading, setLoading] = useState(true);
   const [meal, setMeal] = useState<Meal | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [farmerProfiles, setFarmerProfiles] = useState<Map<string, FarmerProfile>>(new Map());
   
-  const params = useParams();
   const supabase = useMemo(() => createClient(), []);
-  const mealId = params.id as string;
 
   useEffect(() => {
     const loadMealData = async () => {
@@ -82,7 +80,7 @@ export default function PublicMealDetailPage() {
           );
         }
 
-        await loadMeal(mealId);
+        await loadTodayMeal();
       } catch (error) {
         console.error("Error in loadMealData:", error);
       } finally {
@@ -92,14 +90,14 @@ export default function PublicMealDetailPage() {
 
     loadMealData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mealId]);
+  }, []);
 
-  const loadMeal = async (id: string) => {
+  const loadTodayMeal = async () => {
     try {
-      const response = await fetch(`/api/meals/${id}`);
+      const response = await fetch('/api/meals/today');
       
       if (!response.ok) {
-        console.error("Error loading meal:", response.statusText);
+        console.error("Error loading today meal:", response.statusText);
         return;
       }
 
@@ -116,7 +114,7 @@ export default function PublicMealDetailPage() {
         await loadFarmerProfiles(data.vegetables);
       }
     } catch (error) {
-      console.error("Error loading meal:", error);
+      console.error("Error loading today meal:", error);
     }
   };
 
@@ -124,7 +122,7 @@ export default function PublicMealDetailPage() {
     try {
       // Use a timeout to prevent hanging
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
       
       const response = await fetch('/api/admin/farmers', {
         signal: controller.signal
@@ -207,13 +205,13 @@ export default function PublicMealDetailPage() {
       <div className="flex items-center justify-center bg-background">
         <Card>
           <div className="text-center py-8">
-            <p className="mb-4">Mahlzeit nicht gefunden</p>
+            <p className="mb-4">Derzeit ist keine Tagesmahlzeit verfügbar</p>
           </div>
         </Card>
       </div>
     );
   }
-
+  
   // Transform vegetables to match enduser meal page format
   const transformedVegetables = meal.vegetables.map((veg) => ({
     vegetable: veg.vegetable,
@@ -229,6 +227,13 @@ export default function PublicMealDetailPage() {
 
   return (
     <>
+      {/* Video Popup */}
+      <VideoPopup
+        videoUrl="https://www.jazunah.at/app/uploads/2025/10/Tomaten.mp4"
+        autoOpen={true}
+        delay={1000}
+      />
+
       <Container dark fullWidth>
         <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div className="mb-4">

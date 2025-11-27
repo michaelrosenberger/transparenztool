@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { checkAdminAuth } from "@/lib/auth/checkAdminAuth";
 import { useRouter, useParams } from "next/navigation";
 import Card from "@/app/components/Card";
 import Container from "@/app/components/Container";
@@ -82,34 +83,20 @@ export default function EditMealPage() {
   
   const router = useRouter();
   const params = useParams();
-  const supabase = useMemo(() => createClient(), []);
+  const supabase = createClient();
   const mealId = params.id as string;
 
   useEffect(() => {
     const checkUserAndLoadMeal = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { user, isAdmin } = await checkAdminAuth();
         
         if (!user) {
           router.push("/login");
           return;
         }
 
-        // Check admin role from user_roles table
-        const { data: roleData, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .eq('role', 'admin')
-          .maybeSingle();
-
-        if (error) {
-          console.error('Error checking admin role:', error.message);
-          router.push("/");
-          return;
-        }
-
-        if (!roleData) {
+        if (!isAdmin) {
           router.push("/");
           return;
         }
@@ -152,7 +139,14 @@ export default function EditMealPage() {
 
       if (error) {
         console.error("Error loading meal:", error);
-        setMessage({ type: "error", text: "Mahlzeit konnte nicht geladen werden" });
+        console.error("Error details:", JSON.stringify(error, null, 2));
+        setMessage({ type: "error", text: `Mahlzeit konnte nicht geladen werden: ${error.message || 'Unbekannter Fehler'}` });
+        return;
+      }
+
+      if (!data) {
+        console.error("No meal data returned");
+        setMessage({ type: "error", text: "Mahlzeit nicht gefunden" });
         return;
       }
 
