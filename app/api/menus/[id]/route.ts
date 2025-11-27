@@ -4,11 +4,11 @@ import { NextResponse } from "next/server";
 // Public endpoint - no auth required
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
-    const menuId = params.id;
+    const { id: menuId } = await params;
     
     // Get menu
     const { data: menuData, error: menuError } = await supabase
