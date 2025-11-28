@@ -17,8 +17,7 @@ export default function AdminPage() {
   useEffect(() => {
     const checkUser = async () => {
       try {
-        // Force refresh to bypass cache
-        const response = await fetch('/api/auth/check?refresh=true');
+        const response = await fetch('/api/auth/check');
         
         if (!response.ok) {
           console.error('Auth check failed:', response.statusText);
@@ -28,16 +27,12 @@ export default function AdminPage() {
 
         const { user, isAdmin } = await response.json();
         
-        console.log('Admin page auth check:', { user: !!user, isAdmin });
-        
         if (!user) {
-          console.log('No user, redirecting to login');
           router.push("/login");
           return;
         }
 
         if (!isAdmin) {
-          console.log('User is not admin, redirecting to home');
           router.push("/");
           return;
         }

@@ -1,20 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
-// Cache for auth checks - per user ID to avoid conflicts
-const authCache = new Map<string, { user: any; isAdmin: boolean; timestamp: number }>();
-const CACHE_DURATION = 30000; // 30 seconds
-
-// Export function to clear cache for a specific user
-export function clearAuthCache(userId?: string) {
-  if (userId) {
-    authCache.delete(userId);
-  } else {
-    authCache.clear();
-  }
-}
-
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const supabase = await createClient();
     
@@ -22,21 +9,6 @@ export async function GET(request: Request) {
     
     if (userError || !user) {
       return NextResponse.json({ user: null, isAdmin: false });
-    }
-
-    // Check if refresh is requested via query parameter
-    const { searchParams } = new URL(request.url);
-    const forceRefresh = searchParams.get('refresh') === 'true';
-
-    // Check cache for this specific user (skip if refresh requested)
-    if (!forceRefresh) {
-      const cached = authCache.get(user.id);
-      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-        return NextResponse.json({ 
-          user: cached.user, 
-          isAdmin: cached.isAdmin 
-        });
-      }
     }
 
     // Check admin role from user_roles table
@@ -52,9 +24,6 @@ export async function GET(request: Request) {
     }
 
     const isAdmin = !!roleData;
-    
-    // Cache the result for this specific user
-    authCache.set(user.id, { user, isAdmin, timestamp: Date.now() });
     
     return NextResponse.json({ user, isAdmin });
   } catch (error: any) {
