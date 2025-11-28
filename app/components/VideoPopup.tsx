@@ -17,6 +17,7 @@ interface VideoPopupProps {
   delay?: number; // Delay in milliseconds before showing popup
   title?: string;
   description?: string;
+  overlayText?: string; // Text to display in floating card on video
 }
 
 export default function VideoPopup({
@@ -25,16 +26,24 @@ export default function VideoPopup({
   delay = 1000,
   title,
   description,
+  overlayText,
 }: VideoPopupProps) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (autoOpen) {
-      const timer = setTimeout(() => {
-        setOpen(true);
-      }, delay);
+      // Check if video has been shown in this session
+      const hasShownVideo = sessionStorage.getItem('video-popup-shown');
+      
+      if (!hasShownVideo) {
+        const timer = setTimeout(() => {
+          setOpen(true);
+          // Mark video as shown in this session
+          sessionStorage.setItem('video-popup-shown', 'true');
+        }, delay);
 
-      return () => clearTimeout(timer);
+        return () => clearTimeout(timer);
+      }
     }
   }, [autoOpen, delay]);
 
@@ -76,6 +85,17 @@ export default function VideoPopup({
           >
             Ihr Browser unterstützt das Video-Tag nicht.
           </video>
+          
+          {/* Floating Card Overlay */}
+          {overlayText && (
+            <div className="absolute max-sm:relative bottom-8 left-8 max-sm:left-0 max-sm:bottom-0 max-sm:rounded-tr-0 max-sm:rounded-tl-0 max-sm:right-0 transform z-20 md:max-w-[450px] max-md:right-8">
+              <div className="bg-white/95 rounded-lg shadow-lg p-6 max-sm:p-3">
+                <p className="text-3xl max-md:text-2xl max-sm:text-xl">
+                  {overlayText}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
