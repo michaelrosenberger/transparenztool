@@ -15,19 +15,22 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
+          cookiesToSet.forEach(({ name, value }) => {
+            request.cookies.set({
+              name,
+              value,
+            });
+          });
           supabaseResponse = NextResponse.next({
             request,
           });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            supabaseResponse.cookies.set({
+              name,
+              value,
               ...options,
-              sameSite: 'lax',
-              secure: process.env.NODE_ENV === 'production',
-            })
-          );
+            });
+          });
         },
       },
     }
@@ -41,8 +44,14 @@ export async function updateSession(request: NextRequest) {
   try {
     const { data } = await supabase.auth.getUser();
     user = data.user;
+    
+    if (user) {
+      console.log('[MIDDLEWARE] User found:', user.id, 'Path:', request.nextUrl.pathname);
+    } else {
+      console.log('[MIDDLEWARE] No user found, Path:', request.nextUrl.pathname);
+    }
   } catch (error) {
-    console.error("Middleware auth error:", error);
+    console.error("[MIDDLEWARE] Auth error:", error);
     // If there's an error getting the user, allow the request to continue
     // This prevents NetworkError from blocking the entire app
     return supabaseResponse;

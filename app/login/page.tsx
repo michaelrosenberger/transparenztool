@@ -24,19 +24,27 @@ export default function Login() {
     setLoading(true);
 
     try {
+      console.log('[LOGIN] Attempting login...');
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[LOGIN] Login error:', error);
+        throw error;
+      }
 
-      // Wait a bit for session to be established in cookies
-      await new Promise(resolve => setTimeout(resolve, 100));
+      console.log('[LOGIN] Login successful, session:', !!data.session);
       
+      // Wait for session to be established
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      console.log('[LOGIN] Redirecting to home...');
       // Force a full page reload to ensure cookies are set
       window.location.href = "/";
     } catch (error: any) {
+      console.error('[LOGIN] Error:', error);
       const errorMessage = error.message || "Ein Fehler ist beim Anmelden aufgetreten";
       
       // Add more specific error messages
