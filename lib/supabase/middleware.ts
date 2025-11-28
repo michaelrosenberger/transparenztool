@@ -52,7 +52,7 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/auth")
   ) {
     // Add your protected routes here
-    const protectedRoutes = ["/dashboard", "/profile", "/produzenten", "/logistik", "/enduser"];
+    const protectedRoutes = ["/dashboard", "/profile", "/produzenten", "/logistik", "/enduser", "/admin"];
     if (protectedRoutes.some((route) => request.nextUrl.pathname.startsWith(route))) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";

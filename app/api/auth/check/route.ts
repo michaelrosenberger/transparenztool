@@ -7,7 +7,12 @@ export async function GET() {
     
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
-    if (userError || !user) {
+    if (userError) {
+      console.error("Auth check - user error:", userError);
+      return NextResponse.json({ user: null, isAdmin: false });
+    }
+    
+    if (!user) {
       return NextResponse.json({ user: null, isAdmin: false });
     }
 
