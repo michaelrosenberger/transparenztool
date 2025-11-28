@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import Container from "@/app/components/Container";
 import Card from "@/app/components/Card";
 import PageSkeleton from "@/app/components/PageSkeleton";
@@ -17,31 +18,20 @@ export default function AdminPage() {
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const response = await fetch('/api/auth/check');
-        
-        if (!response.ok) {
-          console.error('Auth check failed:', response.statusText);
-          router.push("/");
-          return;
-        }
-
-        const { user, isAdmin } = await response.json();
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
         
         if (!user) {
           router.push("/login");
           return;
         }
 
-        if (!isAdmin) {
-          router.push("/");
-          return;
-        }
-
+        // All authenticated users have admin access
         setUser(user);
         setLoading(false);
       } catch (error) {
         console.error('Error in checkUser:', error);
-        router.push("/");
+        router.push("/login");
       }
     };
 

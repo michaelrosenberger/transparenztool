@@ -23,15 +23,16 @@ export default function Header() {
   const supabase = createClient();
 
   useEffect(() => {
-    // Get initial user and admin status via API
+    // Get initial user and admin status
     const getUser = async () => {
       try {
-        const response = await fetch('/api/auth/check');
+        // First check client-side session
+        const { data: { user: clientUser } } = await supabase.auth.getUser();
         
-        if (response.ok) {
-          const { user, isAdmin } = await response.json();
-          setUser(user);
-          setIsAdmin(isAdmin);
+        if (clientUser) {
+          setUser(clientUser);
+          // All authenticated users are admins now
+          setIsAdmin(true);
         } else {
           setUser(null);
           setIsAdmin(false);
@@ -50,24 +51,8 @@ export default function Header() {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
-      
-      // Re-check admin status via API when auth state changes
-      if (session?.user) {
-        try {
-          const response = await fetch('/api/auth/check');
-          if (response.ok) {
-            const { isAdmin } = await response.json();
-            setIsAdmin(isAdmin);
-          } else {
-            setIsAdmin(false);
-          }
-        } catch (error) {
-          console.error('Error checking admin status:', error);
-          setIsAdmin(false);
-        }
-      } else {
-        setIsAdmin(false);
-      }
+      // All authenticated users are admins now
+      setIsAdmin(!!session?.user);
     });
 
     return () => subscription.unsubscribe();
