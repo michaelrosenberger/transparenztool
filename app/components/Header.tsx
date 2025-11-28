@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, resetClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import {
@@ -75,9 +75,21 @@ export default function Header() {
   }, []);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/");
-    router.refresh();
+    try {
+      // Simple logout - just sign out and redirect
+      await supabase.auth.signOut();
+      
+      // Clear local state
+      setUser(null);
+      setIsAdmin(false);
+      
+      // Redirect to login
+      router.push("/login");
+      router.refresh();
+    } catch (error) {
+      console.error('Error during logout:', error);
+      router.push("/login");
+    }
   };
 
 
@@ -122,7 +134,7 @@ export default function Header() {
               </Link>
             )}
             {/* User Icon - Always visible, links to profile or login */}
-            {/*{!loading && (
+            {!loading && (
               <Link
                 href={user ? "/profile" : "/login"}
                 className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors text-black"
@@ -143,10 +155,10 @@ export default function Header() {
                   <circle cx="12" cy="7" r="4" />
                 </svg>
               </Link>
-            )}*/}
+            )}
 
             {/* Dropdown Menu */}
-            {/*<DropdownMenu>
+            <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" aria-label="Menu" className="pr-0 -mr-3">
                   <svg
@@ -222,7 +234,7 @@ export default function Header() {
                   </>
                 )}
               </DropdownMenuContent>
-            </DropdownMenu>*/}
+            </DropdownMenu>
             </div>
           </div>
         </div>

@@ -5,6 +5,15 @@ import { NextResponse } from "next/server";
 const authCache = new Map<string, { user: any; isAdmin: boolean; timestamp: number }>();
 const CACHE_DURATION = 30000; // 30 seconds
 
+// Export function to clear cache for a specific user
+export function clearAuthCache(userId?: string) {
+  if (userId) {
+    authCache.delete(userId);
+  } else {
+    authCache.clear();
+  }
+}
+
 export async function GET(request: Request) {
   try {
     const supabase = await createClient();

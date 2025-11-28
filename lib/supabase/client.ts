@@ -26,3 +26,8 @@ export function createClient() {
   supabaseInstance = createBrowserClient(supabaseUrl, supabaseAnonKey);
   return supabaseInstance;
 }
+
+// Reset the singleton instance (useful for logout)
+export function resetClient() {
+  supabaseInstance = null;
+}

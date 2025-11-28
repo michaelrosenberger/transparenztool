@@ -60,16 +60,9 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  // If user is logged in and tries to access login/register, redirect to home
-  if (
-    user &&
-    (request.nextUrl.pathname.startsWith("/login") ||
-      request.nextUrl.pathname.startsWith("/register"))
-  ) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
-  }
+  // Don't redirect logged-in users away from login/register
+  // This was causing issues with logout
+  // Users can manually navigate to login if they want
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're
   // creating a new response object with NextResponse.next() make sure to:
