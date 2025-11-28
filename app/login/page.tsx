@@ -31,8 +31,11 @@ export default function Login() {
 
       if (error) throw error;
 
-      router.push("/");
-      router.refresh();
+      // Wait a bit for session to be established in cookies
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Force a full page reload to ensure cookies are set
+      window.location.href = "/";
     } catch (error: any) {
       const errorMessage = error.message || "Ein Fehler ist beim Anmelden aufgetreten";
       
@@ -42,7 +45,6 @@ export default function Login() {
       } else {
         setError(errorMessage);
       }
-    } finally {
       setLoading(false);
     }
   };
