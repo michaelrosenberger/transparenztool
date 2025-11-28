@@ -13,10 +13,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userIsAdmin = await isAdmin(user.id);
-  if (!userIsAdmin) {
-    return NextResponse.json({ error: "Unauthorized - Admin access required" }, { status: 401 });
-  }
+  // All authenticated users have access
 
   try {
     // Check if service role key is configured

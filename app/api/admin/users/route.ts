@@ -19,10 +19,7 @@ export async function GET() {
       if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
-      const userIsAdmin = await isAdmin(user.id);
-      if (!userIsAdmin) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
+      // All authenticated users have access
       return NextResponse.json({ users: usersCache.data });
     }
 
@@ -34,10 +31,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userIsAdmin = await isAdmin(user.id);
-    if (!userIsAdmin) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // All authenticated users have access
 
     // If there's already a pending fetch, wait for it
     if (usersFetchPromise) {

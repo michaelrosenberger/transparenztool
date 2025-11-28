@@ -17,10 +17,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userIsAdmin = await isAdmin(user.id);
-    if (!userIsAdmin) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // All authenticated users have access
     
     // Check if force refresh is requested
     const url = new URL(request.url);

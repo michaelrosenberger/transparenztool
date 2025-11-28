@@ -1,6 +1,6 @@
 /**
- * Client-side helper to check admin authentication via API
- * Use this in admin pages instead of direct Supabase queries
+ * Client-side helper to check authentication via API
+ * All authenticated users have full access
  */
 export async function checkAdminAuth(): Promise<{ user: any; isAdmin: boolean }> {
   const response = await fetch('/api/auth/check');

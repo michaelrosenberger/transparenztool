@@ -16,10 +16,7 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userIsAdmin = await isAdmin(user.id);
-  if (!userIsAdmin) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // All authenticated users have access
 
   try {
     const { id } = await params;
@@ -103,10 +100,10 @@ export async function PATCH(
 ) {
   const supabase = await createClient();
 
-  // Check if user is admin
+  // Check if user is authenticated
   const { data: { user } } = await supabase.auth.getUser();
   
-  if (!user || !user.user_metadata?.is_admin) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -181,15 +178,10 @@ export async function DELETE(
 ) {
   const supabase = await createClient();
 
-  // Check if user is admin
+  // Check if user is authenticated
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const userIsAdmin = await isAdmin(user.id);
-  if (!userIsAdmin) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -209,12 +201,7 @@ export async function DELETE(
       }
     );
 
-    // First, check if the user to be deleted is an admin
-    const targetUserIsAdmin = await isAdmin(userId);
-    
-    if (targetUserIsAdmin) {
-      return NextResponse.json({ error: "Cannot delete admin users" }, { status: 403 });
-    }
+    // All users can be deleted by authenticated users
 
     // Delete the user
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);

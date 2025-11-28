@@ -16,8 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowUpDown, Pencil, Trash2, Store, Shield } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
+import { ArrowUpDown, Pencil, Trash2, Store } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -72,7 +71,6 @@ export default function AdminOverviewPage() {
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [togglingAdmin, setTogglingAdmin] = useState<string | null>(null);
 
   useEffect(() => {
     const checkUserAndLoadData = async () => {
@@ -193,39 +191,6 @@ export default function AdminOverviewPage() {
     }
   };
 
-  const handleToggleAdmin = async (userId: string, currentIsAdmin: boolean) => {
-    setTogglingAdmin(userId);
-    try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          is_admin: !currentIsAdmin,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Fehler beim Aktualisieren");
-      }
-
-      // Update local state
-      setUsers(users.map(u => 
-        u.id === userId ? { ...u, is_admin: !currentIsAdmin } : u
-      ));
-      
-      setMessage({ 
-        type: "success", 
-        text: !currentIsAdmin ? "Admin-Rechte gewährt" : "Admin-Rechte entfernt" 
-      });
-    } catch (error: any) {
-      setMessage({ type: "error", text: error.message || "Fehler beim Aktualisieren der Admin-Rechte" });
-    } finally {
-      setTogglingAdmin(null);
-    }
-  };
 
   const SortButton = ({ field, label }: { field: SortField; label: string }) => (
     <Button
@@ -271,7 +236,6 @@ export default function AdminOverviewPage() {
                 <TableHead>
                   <SortButton field="last_sign_in_at" label="Letzte Aktivität" />
                 </TableHead>
-                <TableHead className="text-center">Admin</TableHead>
                 <TableHead className="text-right">Aktionen</TableHead>
               </TableRow>
             </TableHeader>
@@ -286,17 +250,6 @@ export default function AdminOverviewPage() {
                     </span>
                   </TableCell>
                   <TableCell>{formatDate(user.last_sign_in_at || null)}</TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <Switch
-                        checked={user.is_admin || false}
-                        onCheckedChange={() => handleToggleAdmin(user.id, user.is_admin || false)}
-                        disabled={togglingAdmin === user.id}
-                        aria-label="Admin-Rechte umschalten"
-                      />
-                      {user.is_admin && <Shield className="h-4 w-4 text-orange-500" />}
-                    </div>
-                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button

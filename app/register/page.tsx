@@ -35,6 +35,11 @@ export default function Register() {
     setError(null);
     setLoading(true);
 
+    // TEMPORARY: Registration disabled
+    setError("Registrierung ist vorübergehend deaktiviert. Bitte kontaktieren Sie den Administrator.");
+    setLoading(false);
+    return;
+
     // Validate passwords match
     if (password !== confirmPassword) {
       setError("Passwörter stimmen nicht überein");

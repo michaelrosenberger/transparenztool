@@ -13,10 +13,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userIsAdmin = await isAdmin(user.id);
-  if (!userIsAdmin) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // All authenticated users have access
 
   try {
     const body = await request.json();

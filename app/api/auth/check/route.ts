@@ -11,21 +11,8 @@ export async function GET() {
       return NextResponse.json({ user: null, isAdmin: false });
     }
 
-    // Check admin role from user_roles table
-    const { data: roleData, error: roleError } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .maybeSingle();
-
-    if (roleError) {
-      console.error("Error checking admin role:", roleError);
-    }
-
-    const isAdmin = !!roleData;
-    
-    return NextResponse.json({ user, isAdmin });
+    // All authenticated users have admin access
+    return NextResponse.json({ user, isAdmin: true });
   } catch (error: any) {
     console.error("Error in auth check:", error);
     return NextResponse.json({ 
