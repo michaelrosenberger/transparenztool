@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import Container from "@/app/components/Container";
 import Card from "@/app/components/Card";
 import PageSkeleton from "@/app/components/PageSkeleton";
@@ -17,30 +18,48 @@ export default function AdminPage() {
   useEffect(() => {
     const checkUser = async () => {
       try {
+        // First check if we have a client-side session
+        const supabase = createClient();
+        const { data: { user: clientUser } } = await supabase.auth.getUser();
+        
+        if (!clientUser) {
+          console.log('[ADMIN] No client user, redirecting to login');
+          router.push("/login");
+          return;
+        }
+
+        console.log('[ADMIN] Client user found:', clientUser.id);
+
+        // Now check admin status via API
         const response = await fetch('/api/auth/check');
         
         if (!response.ok) {
-          console.error('Auth check failed:', response.statusText);
+          console.error('[ADMIN] Auth check failed:', response.statusText);
           router.push("/");
           return;
         }
 
-        const { user, isAdmin } = await response.json();
+        const { user: apiUser, isAdmin } = await response.json();
         
-        if (!user) {
+        console.log('[ADMIN] API response - user:', !!apiUser, 'isAdmin:', isAdmin);
+
+        if (!apiUser) {
+          console.log('[ADMIN] No API user, redirecting to login');
           router.push("/login");
           return;
         }
 
         if (!isAdmin) {
+          console.log('[ADMIN] Not admin, redirecting to home');
           router.push("/");
           return;
         }
 
-        setUser(user);
+        console.log('[ADMIN] Access granted');
+        setUser(apiUser);
         setLoading(false);
       } catch (error) {
-        console.error('Error in checkUser:', error);
+        console.error('[ADMIN] Error in checkUser:', error);
         router.push("/");
       }
     };

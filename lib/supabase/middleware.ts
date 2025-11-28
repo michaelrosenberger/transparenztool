@@ -44,12 +44,6 @@ export async function updateSession(request: NextRequest) {
   try {
     const { data } = await supabase.auth.getUser();
     user = data.user;
-    
-    if (user) {
-      console.log('[MIDDLEWARE] User found:', user.id, 'Path:', request.nextUrl.pathname);
-    } else {
-      console.log('[MIDDLEWARE] No user found, Path:', request.nextUrl.pathname);
-    }
   } catch (error) {
     console.error("[MIDDLEWARE] Auth error:", error);
     // If there's an error getting the user, allow the request to continue

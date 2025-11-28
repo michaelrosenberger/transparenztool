@@ -8,16 +8,13 @@ export async function GET() {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
     if (userError) {
-      console.error("[AUTH CHECK] User error:", userError.message);
+      console.error("[AUTH CHECK] Error:", userError.message);
       return NextResponse.json({ user: null, isAdmin: false });
     }
     
     if (!user) {
-      console.log("[AUTH CHECK] No user found in session");
       return NextResponse.json({ user: null, isAdmin: false });
     }
-    
-    console.log("[AUTH CHECK] User found:", user.id);
 
     // Check admin role from user_roles table
     const { data: roleData, error: roleError } = await supabase
