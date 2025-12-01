@@ -291,7 +291,7 @@ export default function PresenationMealDetailPage() {
         </div>
 
         <div className="overflow-hidden relative z-40" style={{ height: 'calc(100vh - 160px)' }}>
-          <div className="w-1/4 relative z-1000 top-[20%] ml-8">
+          <div className="w-1/4 relative z-1000 top-[10%] ml-8">
           {/* Get unique farmers from vegetables */}
           {uniqueFarmers.map((veg, index) => {
               const farmerName = veg.farmer;
@@ -334,23 +334,34 @@ export default function PresenationMealDetailPage() {
                   </div>
 
                   {/* Farmer Info */}
-                  <h3 className="text-2xl font-medium mb-2">{farmerName}</h3>
-                  <p className="text-base mb-4">{farmerAddress}</p>
-
-                  {/* Vegetables */}
-                  {farmerVegetables.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {farmerVegetables.map((vegetable: string, vegIndex: number) => (
-                        <Badge
-                          key={vegIndex}
-                          variant="outline"
-                          className="px-3 py-1 text-sm border-black rounded-full"
-                        >
-                          {vegetable}
-                        </Badge>
-                      ))}
+                  <div className="flex gap-2 justify-between">
+                    <div>
+                      <h3 className="text-2xl font-medium mb-2">{farmerName}</h3>
+                      <p className="text-base mb-4">{farmerAddress}</p>
+                      {/* Vegetables */}
+                      {farmerVegetables.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {farmerVegetables.map((vegetable: string, vegIndex: number) => (
+                            <Badge
+                              key={vegIndex}
+                              variant="outline"
+                              className="px-3 py-1 text-sm border-black rounded-full"
+                            >
+                              {vegetable}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
+                    <div className="">
+                      <QRCodeSVG
+                        value={`${typeof window !== 'undefined' ? window.location.origin : ''}/meal/today`}
+                        size={150}
+                        level="H"
+                        includeMargin={true}
+                      />
+                    </div>
+                  </div>
                 </Card>
               );
 
@@ -364,7 +375,7 @@ export default function PresenationMealDetailPage() {
                   }}
                 >
                   {farmerProfile?.user_id ? (
-                    <Link href={`/produzent/${farmerProfile.user_id}`} className="no-underline block">
+                    <Link href={`/produzent/${farmerProfile.user_id}`} className="no-underline block relative">
                       {cardContent}
                     </Link>
                   ) : (
@@ -386,33 +397,6 @@ export default function PresenationMealDetailPage() {
             mealName={meal.name}
             highlightedFarmer={highlightedFarmer}
           />
-        </div>
-
-        {/* QR Code Section */}
-        <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 py-12">
-          <Card className="p-8">
-            <div className="flex flex-col md:flex-row items-center justify-center gap-8">
-              <div className="flex-1 text-center md:text-left">
-                <div className="flex items-center justify-center md:justify-start gap-2 mb-4">
-                  <QrCode className="h-8 w-8" />
-                  <h2 className="text-3xl font-bold">Mehr erfahren</h2>
-                </div>
-                <p className="text-lg mb-4">
-                  Scanne den QR-Code, um mehr Details über die heutige Mahlzeit zu erfahren.
-                </p>
-              </div>
-              <div className="flex-shrink-0">
-                <div className="bg-white p-6 rounded-lg shadow-lg">
-                  <QRCodeSVG
-                    value={`${typeof window !== 'undefined' ? window.location.origin : ''}/meal/today`}
-                    size={200}
-                    level="H"
-                    includeMargin={true}
-                  />
-                </div>
-              </div>
-            </div>
-          </Card>
         </div>
       </Container>
     </>

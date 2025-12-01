@@ -53,17 +53,18 @@ export default function ProducentPublicPage() {
 
   const loadActiveIngredients = async () => {
     try {
-      const response = await fetch('/api/admin/ingredients');
+      // Query ingredients directly from the database
+      const { data: ingredients, error } = await supabase
+        .from('ingredients')
+        .select('name')
+        .eq('is_available', true);
       
-      if (!response.ok) {
-        console.error("Error loading ingredients:", response.statusText);
+      if (error) {
+        console.error("Error loading ingredients:", error);
         return;
       }
 
-      const { ingredients } = await response.json();
-      const ingredientNames = (ingredients || [])
-        .filter((ing: any) => ing.is_available)
-        .map((ing: any) => ing.name);
+      const ingredientNames = (ingredients || []).map((ing: any) => ing.name);
       setActiveIngredients(ingredientNames);
     } catch (error) {
       console.error("Error loading active ingredients:", error);
@@ -75,21 +76,13 @@ export default function ProducentPublicPage() {
       // Load active ingredients first
       await loadActiveIngredients();
 
-      // Fetch farmer profiles with timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      // Get all farmer profiles using the public RPC function
+      const { data: farmers, error } = await supabase.rpc("get_farmer_profiles");
       
-      const response = await fetch('/api/admin/farmers', {
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
+      if (error) {
+        console.error("Error loading farmer profiles:", error);
         throw new Error("Failed to load farmer profiles");
       }
-
-      const { farmers } = await response.json();
 
       // Find the specific producent
       const producentData = (farmers || []).find((p: any) => p.user_id === producentId);

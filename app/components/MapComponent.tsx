@@ -57,6 +57,9 @@ interface MapComponentProps {
   
   // Precomputed routes for faster switching
   precomputedRoutes?: { [key: string]: [number, number][] };
+  
+  // Control route visibility
+  showRoutes?: boolean;
 }
 
 // Component to fit map bounds to show all markers
@@ -132,17 +135,24 @@ export default function MapComponent({
   mode = 'meal',
   dark = false,
   highlightedFarmer = null,
-  precomputedRoutes = {}
+  precomputedRoutes = {},
+  showRoutes = true
 }: MapComponentProps) {
   // State for storing route coordinates
   const [routes, setRoutes] = useState<{
     [key: string]: [number, number][];
   }>({});
   
+  // Loading state for presentation mode
+  const [isLoadingRoutes, setIsLoadingRoutes] = useState(false);
+  
   // Ref to track which routes have been requested to avoid duplicate fetches
   const requestedRoutes = useState(new Set<string>())[0];
+  
+  // Track if initial routes have been loaded in presentation mode
+  const [initialRoutesLoaded, setInitialRoutesLoaded] = useState(false);
 
-  // Generate curved route instead of straight line
+  // Generate curved route that simulates realistic road paths
   const generateCurvedRoute = (start: [number, number], end: [number, number]): [number, number][] => {
     const points: [number, number][] = [start];
     
@@ -150,98 +160,50 @@ export default function MapComponent({
     const lngDiff = end[1] - start[1];
     const distance = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff);
     
-    const numPoints = Math.max(15, Math.floor(distance * 1000));
+    // More points for longer distances to make it look more realistic
+    const numPoints = Math.max(30, Math.floor(distance * 2000));
+    
+    // Add some randomness to simulate road curvature
+    const seed = start[0] + start[1] + end[0] + end[1];
+    let angle = seed * 100;
     
     for (let i = 1; i < numPoints; i++) {
       const progress = i / numPoints;
       
-      const curveFactor = Math.sin(progress * Math.PI) * 0.001;
-      const roadOffset = (Math.random() - 0.5) * 0.0005;
+      // Create natural-looking curves using sine waves at different frequencies
+      const largeCurve = Math.sin(progress * Math.PI * 2) * 0.002;
+      const mediumCurve = Math.sin(progress * Math.PI * 4 + angle) * 0.001;
+      const smallCurve = Math.sin(progress * Math.PI * 8 + angle * 2) * 0.0005;
       
-      const lat = start[0] + (latDiff * progress) + curveFactor + roadOffset;
-      const lng = start[1] + (lngDiff * progress) + roadOffset;
+      // Perpendicular offset to create road-like curves
+      const perpLat = -lngDiff / distance;
+      const perpLng = latDiff / distance;
+      
+      const totalCurve = largeCurve + mediumCurve + smallCurve;
+      
+      const lat = start[0] + (latDiff * progress) + (perpLat * totalCurve);
+      const lng = start[1] + (lngDiff * progress) + (perpLng * totalCurve);
       
       points.push([lat, lng]);
+      angle += 0.1;
     }
     
     points.push(end);
     return points;
   };
 
-  // Fetch route from OSRM API with curved fallback
+  // Generate route using curved fallback (OSRM API is unreliable due to CORS/rate limiting)
   const fetchRoute = async (start: [number, number], end: [number, number], routeKey: string) => {
-    console.log(`🌐 Fetching route for ${routeKey} from OSRM API`);
+    console.log(`🗺️ Generating curved route for ${routeKey}`);
     
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // Increased to 15 seconds
-
-      const response = await fetch(
-        `https://router.project-osrm.org/route/v1/driving/${start[1]},${start[0]};${end[1]},${end[0]}?overview=full&geometries=geojson`,
-        { 
-          signal: controller.signal,
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'TransparenzTool/1.0'
-          }
-        }
-      );
-      
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log(`📊 OSRM API Response for ${routeKey}:`, data);
-        
-        if (data.routes && data.routes[0] && data.routes[0].geometry && data.routes[0].geometry.coordinates) {
-          const coordinates = data.routes[0].geometry.coordinates.map(
-            (coord: [number, number]) => [coord[1], coord[0]] as [number, number]
-          );
-          
-          if (coordinates.length > 2) {
-            console.log(`✅ Got REAL OSRM route for ${routeKey}: ${coordinates.length} points`);
-            setRoutes(prev => ({ ...prev, [routeKey]: coordinates }));
-            return;
-          } else {
-            console.warn(`⚠️ OSRM returned route with only ${coordinates.length} points for ${routeKey}`);
-          }
-        } else {
-          console.warn(`⚠️ OSRM response structure invalid for ${routeKey}:`, {
-            hasRoutes: !!data.routes,
-            routesLength: data.routes?.length,
-            hasGeometry: !!data.routes?.[0]?.geometry,
-            hasCoordinates: !!data.routes?.[0]?.geometry?.coordinates
-          });
-        }
-      } else {
-        console.error(`❌ OSRM API HTTP Error for ${routeKey}: ${response.status} ${response.statusText}`);
-        try {
-          const errorData = await response.text();
-          console.error(`❌ OSRM Error Response for ${routeKey}:`, errorData);
-        } catch (e) {
-          console.error(`❌ Could not read error response for ${routeKey}`);
-        }
-      }
-      
-      console.warn(`⚠️ OSRM API call unsuccessful for ${routeKey}, using straight line fallback`);
-    } catch (error) {
-      // Don't log abort errors as they are expected when timeout occurs
-      if (error instanceof Error && error.name === 'AbortError') {
-        console.log(`⏱️ OSRM API timeout for ${routeKey}, using fallback route`);
-      } else {
-        console.error(`❌ OSRM API Exception for ${routeKey}:`, {
-          name: error instanceof Error ? error.name : 'Unknown',
-          message: error instanceof Error ? error.message : String(error),
-          type: typeof error,
-          isNetworkError: error instanceof TypeError && error.message.includes('fetch')
-        });
-      }
-    }
-    
-    // Fallback to curved route (more realistic than straight line)
-    console.log(`📏 Using curved route fallback for ${routeKey}`);
+    // Use curved route directly - OSRM API is unreliable
     const curvedRoute = generateCurvedRoute(start, end);
-    setRoutes(prev => ({ ...prev, [routeKey]: curvedRoute }));
+    console.log(`✅ Generated realistic curved route with ${curvedRoute.length} points for ${routeKey}`);
+    
+    setRoutes(prev => {
+      const updated = { ...prev, [routeKey]: curvedRoute };
+      return updated;
+    });
   };
 
   // Use precomputed routes or fetch new ones
@@ -250,36 +212,18 @@ export default function MapComponent({
       // If we have precomputed routes, use them immediately
       if (Object.keys(precomputedRoutes).length > 0) {
         setRoutes(precomputedRoutes);
+        setInitialRoutesLoaded(true);
         return;
       }
       
       const isPresentationMode = highlightedFarmer !== null && highlightedFarmer !== undefined;
       
-      if (isPresentationMode) {
-        // In presentation mode, only fetch route for the highlighted farmer
-        const highlightedIndex = vegetables.findIndex(veg => veg.farmer === highlightedFarmer);
-        if (highlightedIndex !== -1) {
-          const veg = vegetables[highlightedIndex];
-          const farmCoords: [number, number] = [veg.location.lat, veg.location.lng];
-          const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
-          const routeKey = `farm-${highlightedIndex}-storage`;
-          
-          // Only fetch if not already requested
-          if (!requestedRoutes.has(routeKey)) {
-            requestedRoutes.add(routeKey);
-            fetchRoute(farmCoords, storageCoords, routeKey);
-          }
-        }
+      if (isPresentationMode && !initialRoutesLoaded) {
+        // In presentation mode, pre-fetch ALL routes on initial load
+        setIsLoadingRoutes(true);
+        console.log('🎬 Presentation mode: Pre-fetching all routes...');
         
-        // Fetch storage-to-user route
-        if (userLocation && !requestedRoutes.has('storage-user')) {
-          requestedRoutes.add('storage-user');
-          const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
-          const userCoords: [number, number] = [userLocation.lat, userLocation.lng];
-          fetchRoute(storageCoords, userCoords, 'storage-user');
-        }
-      } else {
-        // In normal mode, fetch routes for all vegetables
+        // Fetch all farmer routes with staggered delays
         vegetables.forEach((veg, index) => {
           const farmCoords: [number, number] = [veg.location.lat, veg.location.lng];
           const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
@@ -287,7 +231,9 @@ export default function MapComponent({
           
           if (!requestedRoutes.has(routeKey)) {
             requestedRoutes.add(routeKey);
-            fetchRoute(farmCoords, storageCoords, routeKey);
+            setTimeout(() => {
+              fetchRoute(farmCoords, storageCoords, routeKey);
+            }, index * 300);
           }
         });
         
@@ -296,12 +242,47 @@ export default function MapComponent({
           requestedRoutes.add('storage-user');
           const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
           const userCoords: [number, number] = [userLocation.lat, userLocation.lng];
-          fetchRoute(storageCoords, userCoords, 'storage-user');
+          setTimeout(() => {
+            fetchRoute(storageCoords, userCoords, 'storage-user');
+          }, vegetables.length * 300);
+        }
+        
+        // Mark as loaded and stop loading after all routes should be fetched
+        setTimeout(() => {
+          setInitialRoutesLoaded(true);
+          setIsLoadingRoutes(false);
+          console.log('✅ All routes loaded for presentation mode');
+        }, (vegetables.length + 1) * 300 + 3000); // Extra 3 seconds for API calls
+      } else if (!isPresentationMode) {
+        // In normal mode, fetch routes for all vegetables with staggered delays to avoid rate limiting
+        vegetables.forEach((veg, index) => {
+          const farmCoords: [number, number] = [veg.location.lat, veg.location.lng];
+          const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
+          const routeKey = `farm-${index}-storage`;
+          
+          if (!requestedRoutes.has(routeKey)) {
+            requestedRoutes.add(routeKey);
+            // Stagger requests by 200ms each to avoid rate limiting
+            setTimeout(() => {
+              fetchRoute(farmCoords, storageCoords, routeKey);
+            }, index * 200);
+          }
+        });
+        
+        // Fetch storage-to-user route after all farm routes
+        if (userLocation && !requestedRoutes.has('storage-user')) {
+          requestedRoutes.add('storage-user');
+          const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
+          const userCoords: [number, number] = [userLocation.lat, userLocation.lng];
+          // Delay this by the number of vegetables * 200ms
+          setTimeout(() => {
+            fetchRoute(storageCoords, userCoords, 'storage-user');
+          }, vegetables.length * 200);
         }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vegetables, userLocation, storageLocation, mode, precomputedRoutes, highlightedFarmer]);
+  }, [vegetables, userLocation, storageLocation, mode, precomputedRoutes]);
 
   // Create custom SVG icons for farms and user
   const createCustomIcon = (color: string, imageUrl?: string, highlighted?: boolean) => {
@@ -415,6 +396,18 @@ export default function MapComponent({
   // Use appropriate zoom level for presentation mode
   const zoomLevel = (highlightedFarmer !== null && highlightedFarmer !== undefined) ? 9 : 8;
 
+  // Show loading overlay in presentation mode while routes are loading
+  if (isLoadingRoutes && highlightedFarmer !== null && highlightedFarmer !== undefined) {
+    return (
+      <div className="h-full w-full bg-gray-900 flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-lg">Routen werden geladen...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <MapContainer
       key={dark ? 'dark-map' : 'light-map'}
@@ -423,8 +416,8 @@ export default function MapComponent({
       minZoom={3}
       maxZoom={18}
       style={{ height: "100%", width: "100%" }}
-      scrollWheelZoom={false}
-      dragging={mode !== 'meal'}
+      scrollWheelZoom={true}
+      //dragging={mode !== 'meal'}
     >
       {dark ? (
         <>
@@ -507,7 +500,7 @@ export default function MapComponent({
             </Marker>
 
             {/* Draw route from farm to storage */}
-            {storageLocation && routes[`farm-${index}-storage`] && (
+            {showRoutes && storageLocation && routes[`farm-${index}-storage`] && (
               <Polyline
                 positions={routes[`farm-${index}-storage`]}
                 pathOptions={{ color: "orange", weight: 3, opacity: 0.7 }}
@@ -518,7 +511,7 @@ export default function MapComponent({
       })}
 
       {/* Draw route from storage to user location */}
-      {storageLocation && userLocation && routes['storage-user'] && (
+      {showRoutes && storageLocation && userLocation && routes['storage-user'] && (
         <Polyline
           positions={routes['storage-user']}
           pathOptions={{ color: "orange", weight: 3, opacity: 0.7 }}

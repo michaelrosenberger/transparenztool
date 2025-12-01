@@ -274,6 +274,7 @@ export default function TodayMealPage() {
               name: meal.storage_name
             }}
             mealName={meal.name}
+            showRoutes={false}
           />
         </div>
 

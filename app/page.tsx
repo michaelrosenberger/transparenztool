@@ -142,6 +142,8 @@ export default function Home() {
       
       if (error) {
         console.error("Error loading farmer profiles:", error);
+        console.log("Note: The get_farmer_profiles RPC function may not exist. Run CREATE_FARMERS_PROFILE_FUNCTION.sql to create it.");
+        // Farmer profiles are optional, so we continue without them
         return;
       }
 
@@ -278,6 +280,7 @@ export default function Home() {
               name: meal.storage_name
             }}
             mealName={meal.name}
+            showRoutes={false}
           />
         </div>
 
