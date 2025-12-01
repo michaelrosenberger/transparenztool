@@ -151,6 +151,10 @@ export default function MapComponent({
   
   // Track if initial routes have been loaded in presentation mode
   const [initialRoutesLoaded, setInitialRoutesLoaded] = useState(false);
+  
+  // Track successful route fetches (real OSRM routes, not fallbacks)
+  const [successfulRoutes, setSuccessfulRoutes] = useState(new Set<string>());
+  const [expectedRouteCount, setExpectedRouteCount] = useState(0);
 
   // Generate curved route that simulates realistic road paths
   const generateCurvedRoute = (start: [number, number], end: [number, number]): [number, number][] => {
@@ -199,7 +203,7 @@ export default function MapComponent({
       const response = await fetch(
         `/api/route?start=${start[0]},${start[1]}&end=${end[0]},${end[1]}`,
         { 
-          signal: AbortSignal.timeout(12000),
+          signal: AbortSignal.timeout(15000), // Increased to 15 seconds
           cache: 'no-store'
         }
       );
@@ -209,6 +213,8 @@ export default function MapComponent({
         
         if (data.success && data.coordinates && data.coordinates.length > 2) {
           setRoutes(prev => ({ ...prev, [routeKey]: data.coordinates }));
+          // Mark this route as successful (real OSRM route)
+          setSuccessfulRoutes(prev => new Set([...prev, routeKey]));
           return;
         }
       }
@@ -236,6 +242,8 @@ export default function MapComponent({
       if (isPresentationMode && !initialRoutesLoaded) {
         // In presentation mode, pre-fetch ALL routes on initial load
         setIsLoadingRoutes(true);
+        const totalRoutes = vegetables.length + (userLocation ? 1 : 0);
+        setExpectedRouteCount(totalRoutes);
         
         // Fetch all farmer routes with staggered delays
         vegetables.forEach((veg, index) => {
@@ -265,10 +273,12 @@ export default function MapComponent({
         setTimeout(() => {
           setInitialRoutesLoaded(true);
           setIsLoadingRoutes(false);
-        }, (vegetables.length + 1) * 300 + 3000); // Extra 3 seconds for API calls
+        }, (vegetables.length + 1) * 300 + 5000); // Extra 5 seconds for API calls
       } else if (!isPresentationMode && !initialRoutesLoaded) {
         // In normal mode, pre-fetch all routes with loading state
         setIsLoadingRoutes(true);
+        const totalRoutes = vegetables.length + (userLocation ? 1 : 0);
+        setExpectedRouteCount(totalRoutes);
         
         // Fetch routes for all vegetables with staggered delays to avoid rate limiting
         vegetables.forEach((veg, index) => {
@@ -300,7 +310,7 @@ export default function MapComponent({
         setTimeout(() => {
           setInitialRoutesLoaded(true);
           setIsLoadingRoutes(false);
-        }, (vegetables.length + 1) * 200 + 3000); // Extra 3 seconds for API calls
+        }, (vegetables.length + 1) * 200 + 5000); // Extra 5 seconds for API calls
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -418,17 +428,7 @@ export default function MapComponent({
   // Use appropriate zoom level for presentation mode
   const zoomLevel = (highlightedFarmer !== null && highlightedFarmer !== undefined) ? 9 : 8;
 
-  // Show loading overlay while routes are loading
-  if (isLoadingRoutes) {
-    return (
-      <div className="h-full w-full bg-black flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-orange-400 mx-auto mb-4"></div>
-          <p className="text-lg">Produzenten werden geladen...</p>
-        </div>
-      </div>
-    );
-  }
+  // Don't show loading overlay - show map immediately and load routes in background
 
   return (
     <MapContainer
@@ -521,8 +521,8 @@ export default function MapComponent({
               </Popup>
             </Marker>
 
-            {/* Draw route from farm to storage */}
-            {showRoutes && storageLocation && routes[`farm-${index}-storage`] && (
+            {/* Draw route from farm to storage - only if successfully loaded from OSRM */}
+            {showRoutes && storageLocation && routes[`farm-${index}-storage`] && successfulRoutes.has(`farm-${index}-storage`) && (
               <Polyline
                 positions={routes[`farm-${index}-storage`]}
                 pathOptions={{ color: "orange", weight: 3, opacity: 0.7 }}
@@ -532,8 +532,8 @@ export default function MapComponent({
         );
       })}
 
-      {/* Draw route from storage to user location */}
-      {showRoutes && storageLocation && userLocation && routes['storage-user'] && (
+      {/* Draw route from storage to user location - only if successfully loaded from OSRM */}
+      {showRoutes && storageLocation && userLocation && routes['storage-user'] && successfulRoutes.has('storage-user') && (
         <Polyline
           positions={routes['storage-user']}
           pathOptions={{ color: "orange", weight: 3, opacity: 0.7 }}

@@ -257,6 +257,7 @@ export default function TodayMealPage() {
         videoUrl="https://www.jazunah.at/app/uploads/2025/10/Tomaten.mp4"
         autoOpen={true}
         delay={1000}
+        overlayText="Regionale Vielfalt auf deinem Teller."
       />
 
       <Container dark fullWidth>

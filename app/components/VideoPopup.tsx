@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import { X } from "lucide-react";
+import { X, ArrowRight } from "lucide-react";
 
 interface VideoPopupProps {
   videoUrl: string;
@@ -74,7 +74,10 @@ export default function VideoPopup({
         </DialogHeader>
 
         {/* Video */}
-        <div className="relative w-full aspect-video bg-black z-10">
+        <div 
+          className="relative w-full aspect-video bg-black z-10 cursor-pointer"
+          onClick={() => setOpen(false)}
+        >
           <video
             src={videoUrl}
             autoPlay
@@ -88,11 +91,15 @@ export default function VideoPopup({
           
           {/* Floating Card Overlay */}
           {overlayText && (
-            <div className="absolute max-sm:relative bottom-8 left-8 max-sm:left-0 max-sm:bottom-0 max-sm:rounded-tr-0 max-sm:rounded-tl-0 max-sm:right-0 transform z-20 md:max-w-[450px] max-md:right-8">
-              <div className="bg-white/95 rounded-lg shadow-lg p-6 max-sm:p-3">
+            <div className="absolute max-sm:relative bottom-8 left-8 max-sm:left-0 max-sm:bottom-0 max-sm:rounded-tr-none max-sm:rounded-tl-none max-sm:right-0 transform z-20 md:max-w-[350px] max-md:right-8">
+              <div className="bg-white/95 rounded-lg max-sm:rounded-tr-none max-sm:rounded-tl-none shadow-lg p-6 max-sm:p-3">
                 <p className="text-3xl max-md:text-2xl max-sm:text-xl">
                   {overlayText}
                 </p>
+                <a className="mt-2 flex items-center gap-2 " href="#">
+                  Zu den Produzenten
+                  <ArrowRight className="h-4 w-4 top-[3px] relative" />
+                </a>
               </div>
             </div>
           )}
