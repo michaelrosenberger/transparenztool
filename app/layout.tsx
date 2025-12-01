@@ -5,6 +5,7 @@ import Footer from "./components/Footer";
 import { Toaster } from "@/components/ui/sonner";
 import { headers } from "next/headers";
 import BrowserCompatibility from "./components/BrowserCompatibility";
+import { Analytics } from '@vercel/analytics/next';
 //import DynamicBreadcrumbs from "./components/DynamicBreadcrumbs";
 
 export const metadata: Metadata = {
@@ -66,6 +67,7 @@ export default async function RootLayout({
         {!isPresentationMode && <Footer />}
         <Toaster />
         <BrowserCompatibility />
+        <Analytics />
       </body>
     </html>
   );

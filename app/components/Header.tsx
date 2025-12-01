@@ -81,7 +81,7 @@ export default function Header() {
   const fullName = user?.user_metadata?.full_name;
 
   return (
-    <header className="sticky top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-[var(--shadow-menu)]">
+    <header className="top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-[var(--shadow-menu)]">
       <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20 py-2">
           {/* Logo */}
@@ -93,9 +93,8 @@ export default function Header() {
             />
           </Link>
 
-          <div className="flex items-center gap-4">
+          {/*<div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-            {/* Admin Dashboard Link - Only show for admin users */}
             {!loading && isAdmin && (
               <Link
                 href="/admin"
@@ -118,7 +117,6 @@ export default function Header() {
                 </svg>
               </Link>
             )}
-            {/* User Icon - Always visible, links to profile or login */}
             {!loading && (
               <Link
                 href={user ? "/profile" : "/login"}
@@ -142,7 +140,6 @@ export default function Header() {
               </Link>
             )}
 
-            {/* Dropdown Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" aria-label="Menu" className="pr-0 -mr-3">
@@ -221,7 +218,7 @@ export default function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
             </div>
-          </div>
+          </div>*/}
         </div>
       </div>
     </header>

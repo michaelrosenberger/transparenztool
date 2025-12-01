@@ -266,8 +266,11 @@ export default function MapComponent({
           setInitialRoutesLoaded(true);
           setIsLoadingRoutes(false);
         }, (vegetables.length + 1) * 300 + 3000); // Extra 3 seconds for API calls
-      } else if (!isPresentationMode) {
-        // In normal mode, fetch routes for all vegetables with staggered delays to avoid rate limiting
+      } else if (!isPresentationMode && !initialRoutesLoaded) {
+        // In normal mode, pre-fetch all routes with loading state
+        setIsLoadingRoutes(true);
+        
+        // Fetch routes for all vegetables with staggered delays to avoid rate limiting
         vegetables.forEach((veg, index) => {
           const farmCoords: [number, number] = [veg.location.lat, veg.location.lng];
           const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
@@ -292,6 +295,12 @@ export default function MapComponent({
             fetchRoute(storageCoords, userCoords, 'storage-user');
           }, vegetables.length * 200);
         }
+        
+        // Mark as loaded and stop loading after all routes should be fetched
+        setTimeout(() => {
+          setInitialRoutesLoaded(true);
+          setIsLoadingRoutes(false);
+        }, (vegetables.length + 1) * 200 + 3000); // Extra 3 seconds for API calls
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -409,13 +418,13 @@ export default function MapComponent({
   // Use appropriate zoom level for presentation mode
   const zoomLevel = (highlightedFarmer !== null && highlightedFarmer !== undefined) ? 9 : 8;
 
-  // Show loading overlay in presentation mode while routes are loading
-  if (isLoadingRoutes && highlightedFarmer !== null && highlightedFarmer !== undefined) {
+  // Show loading overlay while routes are loading
+  if (isLoadingRoutes) {
     return (
-      <div className="h-full w-full bg-gray-900 flex items-center justify-center">
+      <div className="h-full w-full bg-black flex items-center justify-center">
         <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-lg">Routen werden geladen...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-orange-400 mx-auto mb-4"></div>
+          <p className="text-lg">Produzenten werden geladen...</p>
         </div>
       </div>
     );

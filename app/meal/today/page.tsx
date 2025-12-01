@@ -196,7 +196,7 @@ export default function TodayMealPage() {
       lng: meal.storage_lng 
     };
     
-    // Calculate distance: farm → storage + storage → user for each vegetable
+    // Calculate storage → user distance (only once)
     const storageToUserDistance = calculateDistance(
       storageLocation.lat,
       storageLocation.lng,
@@ -204,17 +204,21 @@ export default function TodayMealPage() {
       userLocation.lng
     );
     
-    const total = meal.vegetables.reduce((sum, veg) => {
+    // Calculate average farm → storage distance
+    const totalFarmToStorage = meal.vegetables.reduce((sum, veg) => {
       const farmToStorageDistance = calculateDistance(
         veg.lat,
         veg.lng,
         storageLocation.lat,
         storageLocation.lng
       );
-      return sum + farmToStorageDistance + storageToUserDistance;
+      return sum + farmToStorageDistance;
     }, 0);
     
-    return (total / meal.vegetables.length).toFixed(1);
+    const avgFarmToStorage = totalFarmToStorage / meal.vegetables.length;
+    
+    // Total average distance = average(farm → storage) + storage → user
+    return (avgFarmToStorage + storageToUserDistance).toFixed(1);
   };
 
   if (loading) {
@@ -274,7 +278,6 @@ export default function TodayMealPage() {
               name: meal.storage_name
             }}
             mealName={meal.name}
-            showRoutes={false}
           />
         </div>
 
