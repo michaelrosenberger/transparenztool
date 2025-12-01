@@ -138,6 +138,9 @@ export default function MapComponent({
   const [routes, setRoutes] = useState<{
     [key: string]: [number, number][];
   }>({});
+  
+  // Ref to track which routes have been requested to avoid duplicate fetches
+  const requestedRoutes = useState(new Set<string>())[0];
 
   // Generate curved route instead of straight line
   const generateCurvedRoute = (start: [number, number], end: [number, number]): [number, number][] => {
@@ -171,7 +174,7 @@ export default function MapComponent({
     
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // Increased to 15 seconds
 
       const response = await fetch(
         `https://router.project-osrm.org/route/v1/driving/${start[1]},${start[0]};${end[1]},${end[0]}?overview=full&geometries=geojson`,
@@ -222,21 +225,23 @@ export default function MapComponent({
       
       console.warn(`⚠️ OSRM API call unsuccessful for ${routeKey}, using straight line fallback`);
     } catch (error) {
-      console.error(`❌ OSRM API Exception for ${routeKey}:`, {
-        name: error instanceof Error ? error.name : 'Unknown',
-        message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-        type: typeof error,
-        isAbortError: error instanceof Error && error.name === 'AbortError',
-        isNetworkError: error instanceof TypeError && error.message.includes('fetch'),
-        isTimeoutError: error instanceof Error && error.name === 'AbortError',
-        fullError: error
-      });
+      // Don't log abort errors as they are expected when timeout occurs
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log(`⏱️ OSRM API timeout for ${routeKey}, using fallback route`);
+      } else {
+        console.error(`❌ OSRM API Exception for ${routeKey}:`, {
+          name: error instanceof Error ? error.name : 'Unknown',
+          message: error instanceof Error ? error.message : String(error),
+          type: typeof error,
+          isNetworkError: error instanceof TypeError && error.message.includes('fetch')
+        });
+      }
     }
     
-    // Fallback to straight line
-    console.log(`📏 Using straight line fallback for ${routeKey}`);
-    setRoutes(prev => ({ ...prev, [routeKey]: [start, end] }));
+    // Fallback to curved route (more realistic than straight line)
+    console.log(`📏 Using curved route fallback for ${routeKey}`);
+    const curvedRoute = generateCurvedRoute(start, end);
+    setRoutes(prev => ({ ...prev, [routeKey]: curvedRoute }));
   };
 
   // Use precomputed routes or fetch new ones
@@ -248,26 +253,60 @@ export default function MapComponent({
         return;
       }
       
-      // Otherwise, fetch routes as before
-      vegetables.forEach((veg, index) => {
-        const farmCoords: [number, number] = [veg.location.lat, veg.location.lng];
-        const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
-        fetchRoute(farmCoords, storageCoords, `farm-${index}-storage`);
-      });
-
-      // Fetch route from storage to user location
-      if (userLocation) {
-        const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
-        const userCoords: [number, number] = [userLocation.lat, userLocation.lng];
-        fetchRoute(storageCoords, userCoords, 'storage-user');
+      const isPresentationMode = highlightedFarmer !== null && highlightedFarmer !== undefined;
+      
+      if (isPresentationMode) {
+        // In presentation mode, only fetch route for the highlighted farmer
+        const highlightedIndex = vegetables.findIndex(veg => veg.farmer === highlightedFarmer);
+        if (highlightedIndex !== -1) {
+          const veg = vegetables[highlightedIndex];
+          const farmCoords: [number, number] = [veg.location.lat, veg.location.lng];
+          const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
+          const routeKey = `farm-${highlightedIndex}-storage`;
+          
+          // Only fetch if not already requested
+          if (!requestedRoutes.has(routeKey)) {
+            requestedRoutes.add(routeKey);
+            fetchRoute(farmCoords, storageCoords, routeKey);
+          }
+        }
+        
+        // Fetch storage-to-user route
+        if (userLocation && !requestedRoutes.has('storage-user')) {
+          requestedRoutes.add('storage-user');
+          const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
+          const userCoords: [number, number] = [userLocation.lat, userLocation.lng];
+          fetchRoute(storageCoords, userCoords, 'storage-user');
+        }
+      } else {
+        // In normal mode, fetch routes for all vegetables
+        vegetables.forEach((veg, index) => {
+          const farmCoords: [number, number] = [veg.location.lat, veg.location.lng];
+          const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
+          const routeKey = `farm-${index}-storage`;
+          
+          if (!requestedRoutes.has(routeKey)) {
+            requestedRoutes.add(routeKey);
+            fetchRoute(farmCoords, storageCoords, routeKey);
+          }
+        });
+        
+        // Fetch storage-to-user route
+        if (userLocation && !requestedRoutes.has('storage-user')) {
+          requestedRoutes.add('storage-user');
+          const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
+          const userCoords: [number, number] = [userLocation.lat, userLocation.lng];
+          fetchRoute(storageCoords, userCoords, 'storage-user');
+        }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vegetables, userLocation, storageLocation, mode, precomputedRoutes]);
+  }, [vegetables, userLocation, storageLocation, mode, precomputedRoutes, highlightedFarmer]);
 
   // Create custom SVG icons for farms and user
   const createCustomIcon = (color: string, imageUrl?: string, highlighted?: boolean) => {
-    const iconImage = imageUrl || '/vegetable-icon.svg';
+    // Always use the default vegetable icon for consistency
+    const iconImage = '/vegetable-icon.svg';
     // In presentation view (when highlightedFarmer prop is passed), default is black, highlighted is orange
     // In other views, always use the passed color (orange)
     const isPresentationView = highlightedFarmer !== null && highlightedFarmer !== undefined;
@@ -443,6 +482,11 @@ export default function MapComponent({
         // Create ingredient-specific icon with custom image if available
         const isHighlighted = highlightedFarmer === veg.farmer;
         const ingredientIcon = createCustomIcon('orange', veg.image_url, isHighlighted);
+        
+        // In presentation mode, only show the highlighted farmer
+        const shouldShow = highlightedFarmer === null || highlightedFarmer === undefined || isHighlighted;
+        
+        if (!shouldShow) return null;
         
         return (
           <div key={index}>

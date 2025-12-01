@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import Card from "@/app/components/Card";
 import Container from "@/app/components/Container";
@@ -52,6 +53,8 @@ export default function PresenationMealDetailPage() {
   const [farmerProfiles, setFarmerProfiles] = useState<Map<string, FarmerProfile>>(new Map());
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  
+  const supabase = useMemo(() => createClient(), []);
   
   useEffect(() => {
     const loadMealData = async () => {
@@ -152,21 +155,13 @@ export default function PresenationMealDetailPage() {
 
   const loadFarmerProfiles = async (vegetables: VegetableSource[]) => {
     try {
-      // Use a timeout to prevent hanging
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      // Get all farmer profiles using the public RPC function
+      const { data, error } = await supabase.rpc("get_farmer_profiles");
       
-      const response = await fetch('/api/admin/farmers', {
-        signal: controller.signal
-      }).catch(() => null);
-      
-      clearTimeout(timeoutId);
-      
-      if (!response || !response.ok) {
+      if (error) {
+        console.error("Error loading farmer profiles:", error);
         return;
       }
-
-      const { farmers: data } = await response.json();
 
       // Create a map of farmer name to profile
       const profileMap = new Map<string, FarmerProfile>();
