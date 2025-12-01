@@ -253,13 +253,13 @@ export default function Home() {
 
   return (
     <>
-      {/* Video Popup */}
-      <VideoPopup
+      {/* Video Popup - Temporarily disabled */}
+      {/* <VideoPopup
         videoUrl="https://www.jazunah.at/app/uploads/2025/10/Tomaten.mp4"
         autoOpen={true}
         delay={1000}
         overlayText="Regionale Vielfalt auf deinem Teller."
-      />
+      /> */}
 
       <Container dark fullWidth>
         <div className="flex items-center justify-between mb-6 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
