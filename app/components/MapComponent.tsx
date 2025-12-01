@@ -198,31 +198,40 @@ export default function MapComponent({
 
   // Fetch route using backend API proxy (avoids CORS issues)
   const fetchRoute = async (start: [number, number], end: [number, number], routeKey: string) => {
+    const url = `/api/route?start=${start[0]},${start[1]}&end=${end[0]},${end[1]}`;
+    console.log(`[Route] Fetching ${routeKey} from:`, url);
+    
     try {
       // Call our backend API which proxies to OSRM
-      const response = await fetch(
-        `/api/route?start=${start[0]},${start[1]}&end=${end[0]},${end[1]}`,
-        { 
-          signal: AbortSignal.timeout(15000), // Increased to 15 seconds
-          cache: 'no-store'
-        }
-      );
+      const response = await fetch(url, { 
+        signal: AbortSignal.timeout(15000), // Increased to 15 seconds
+        cache: 'no-store'
+      });
+
+      console.log(`[Route] ${routeKey} response status:`, response.status);
 
       if (response.ok) {
         const data = await response.json();
+        console.log(`[Route] ${routeKey} data:`, { success: data.success, coordCount: data.coordinates?.length, error: data.error });
         
         if (data.success && data.coordinates && data.coordinates.length > 2) {
+          console.log(`[Route] ✅ ${routeKey} SUCCESS - ${data.coordinates.length} points`);
           setRoutes(prev => ({ ...prev, [routeKey]: data.coordinates }));
           // Mark this route as successful (real OSRM route)
           setSuccessfulRoutes(prev => new Set([...prev, routeKey]));
           return;
+        } else {
+          console.warn(`[Route] ⚠️ ${routeKey} API returned no valid route:`, data.error);
         }
+      } else {
+        console.error(`[Route] ❌ ${routeKey} HTTP error:`, response.status);
       }
     } catch (error) {
-      // Silently fall back to curved route
+      console.error(`[Route] ❌ ${routeKey} fetch failed:`, error instanceof Error ? error.message : error);
     }
     
     // Fallback to curved route if OSRM fails
+    console.log(`[Route] 📏 ${routeKey} using fallback (not displayed)`);
     const curvedRoute = generateCurvedRoute(start, end);
     setRoutes(prev => ({ ...prev, [routeKey]: curvedRoute }));
   };
