@@ -280,7 +280,6 @@ export default function Home() {
               name: meal.storage_name
             }}
             mealName={meal.name}
-            showRoutes={false}
           />
         </div>
 
