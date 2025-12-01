@@ -1,9 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Circle, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+
+// Component to auto-open marker popup in presentation mode
+function MarkerWithAutoPopup({ 
+  position, 
+  icon, 
+  children, 
+  isHighlighted 
+}: { 
+  position: [number, number]; 
+  icon: L.DivIcon; 
+  children: React.ReactNode;
+  isHighlighted: boolean;
+}) {
+  const markerRef = useRef<L.Marker>(null);
+
+  useEffect(() => {
+    if (isHighlighted && markerRef.current) {
+      // Open popup when marker is highlighted
+      markerRef.current.openPopup();
+    }
+  }, [isHighlighted]);
+
+  return (
+    <Marker position={position} icon={icon} ref={markerRef}>
+      {children}
+    </Marker>
+  );
+}
 
 // Component to handle map recentering in presentation mode
 function MapRecenter({ 
@@ -36,12 +64,13 @@ function MapRecenter({
         
         // Fit bounds to show all three points with padding
         // Add extra left padding to account for the overlay (25% of map width)
+        // Add extra top padding to ensure popup/tooltip is visible
         const bounds = L.latLngBounds(points);
         const mapSize = map.getSize();
         const leftPadding = mapSize.x * 0.25; // 25% of map width
         
         map.fitBounds(bounds, { 
-          paddingTopLeft: [leftPadding + 50, 50],
+          paddingTopLeft: [leftPadding + 50, 150], // Increased top padding for popup visibility
           paddingBottomRight: [50, 50],
           maxZoom: 13,
           animate: true,
@@ -243,7 +272,6 @@ export default function MapComponent({
   // Fetch route using backend API proxy (avoids CORS issues)
   const fetchRoute = async (start: [number, number], end: [number, number], routeKey: string) => {
     const url = `/api/route?start=${start[0]},${start[1]}&end=${end[0]},${end[1]}`;
-    console.log(`[Route] Fetching ${routeKey} from:`, url);
     
     try {
       // Call our backend API which proxies to OSRM
@@ -252,30 +280,21 @@ export default function MapComponent({
         cache: 'no-store'
       });
 
-      console.log(`[Route] ${routeKey} response status:`, response.status);
-
       if (response.ok) {
         const data = await response.json();
-        console.log(`[Route] ${routeKey} data:`, { success: data.success, coordCount: data.coordinates?.length, error: data.error });
         
         if (data.success && data.coordinates && data.coordinates.length > 2) {
-          console.log(`[Route] ✅ ${routeKey} SUCCESS - ${data.coordinates.length} points`);
           setRoutes(prev => ({ ...prev, [routeKey]: data.coordinates }));
           // Mark this route as successful (real OSRM route)
           setSuccessfulRoutes(prev => new Set([...prev, routeKey]));
           return;
-        } else {
-          console.warn(`[Route] ⚠️ ${routeKey} API returned no valid route:`, data.error);
         }
-      } else {
-        console.error(`[Route] ❌ ${routeKey} HTTP error:`, response.status);
       }
     } catch (error) {
-      console.error(`[Route] ❌ ${routeKey} fetch failed:`, error instanceof Error ? error.message : error);
+      // Silent error handling
     }
     
     // Fallback to curved route if OSRM fails
-    console.log(`[Route] 📏 ${routeKey} using fallback (not displayed)`);
     const curvedRoute = generateCurvedRoute(start, end);
     setRoutes(prev => ({ ...prev, [routeKey]: curvedRoute }));
   };
@@ -368,6 +387,36 @@ export default function MapComponent({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vegetables, userLocation, storageLocation, mode, precomputedRoutes]);
+
+  // Create city icon for static city markers
+  const createCityIcon = (offsetX: number = 0) => {
+    const svgIcon = `
+      <svg width="30" height="30" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="11" fill="white" stroke="#666" stroke-width="1"/>
+        <g transform="translate(12, 12) scale(0.7) translate(-12, -12)">
+          <path d="M3 21h18M5 21V9l4-4 4 4v12M9 21v-6h2v6M15 13h4v8h-4zM17 16h1M17 19h1" 
+                stroke="#666" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        </g>
+      </svg>
+    `;
+    return L.divIcon({
+      html: svgIcon,
+      className: 'city-marker',
+      iconSize: [30, 30],
+      iconAnchor: [15 - offsetX, -10], // Apply horizontal offset, negative Y pushes icon down
+      popupAnchor: [offsetX, 10]
+    });
+  };
+
+  // Major cities in Austria/Niederösterreich
+  const majorCities = [
+    { name: 'Wien', lat: 48.2082, lng: 16.3738, offsetX: 0 },
+    { name: 'Krems an der Donau', lat: 48.4097, lng: 15.6142, offsetX: -20 },
+    { name: 'Tulln an der Donau', lat: 48.3256, lng: 16.0577, offsetX: 0 },
+    { name: 'Melk', lat: 48.2275, lng: 15.3333, offsetX: 0 },
+    { name: 'Amstetten', lat: 48.1225, lng: 14.8722, offsetX: 0 },
+    { name: 'Wiener Neustadt', lat: 47.8167, lng: 16.2426, offsetX: 0 }
+  ];
 
   // Create custom SVG icons for farms and user
   const createCustomIcon = (color: string, imageUrl?: string, highlighted?: boolean) => {
@@ -568,21 +617,42 @@ export default function MapComponent({
         
         return (
           <div key={index}>
-            <Marker position={[veg.location.lat, veg.location.lng]} icon={ingredientIcon}>
-              <Popup>
-                <div>
-                  <strong>{veg.farmer}</strong>
-                  <br />
-                  <span>{veg.vegetable}</span>
-                  <br />
-                  <span className="text-xs">{veg.location.address}</span>
-                  <br />
-                  <span className="font-medium text-green-700">
-                    {veg.distance.toFixed(1)} km entfernt
-                  </span>
-                </div>
-              </Popup>
-            </Marker>
+            {/* Use auto-popup marker in presentation mode */}
+            {highlightedFarmer !== null && highlightedFarmer !== undefined ? (
+              <MarkerWithAutoPopup 
+                position={[veg.location.lat, veg.location.lng]} 
+                icon={ingredientIcon}
+                isHighlighted={isHighlighted}
+              >
+                <Popup>
+                  <div className="text-base text-center">
+                    <strong className="text-lg">{veg.farmer}</strong>
+                    <br />
+                    <span>{veg.location.address}</span>
+                    <br />
+                    <span className="text-lg font-semibold text-green-700">
+                      {veg.distance.toFixed(1)} km entfernt
+                    </span>
+                  </div>
+                </Popup>
+              </MarkerWithAutoPopup>
+            ) : (
+              <Marker position={[veg.location.lat, veg.location.lng]} icon={ingredientIcon}>
+                <Popup>
+                  <div>
+                    <strong>{veg.farmer}</strong>
+                    <br />
+                    <span>{veg.vegetable}</span>
+                    <br />
+                    <span className="text-xs">{veg.location.address}</span>
+                    <br />
+                    <span className="font-medium text-green-700">
+                      {veg.distance.toFixed(1)} km entfernt
+                    </span>
+                  </div>
+                </Popup>
+              </Marker>
+            )}
 
             {/* Draw route from farm to storage - only if successfully loaded from OSRM */}
             {showRoutes && storageLocation && routes[`farm-${index}-storage`] && successfulRoutes.has(`farm-${index}-storage`) && (
@@ -602,6 +672,21 @@ export default function MapComponent({
           pathOptions={{ color: "orange", weight: 3, opacity: 0.7 }}
         />
       )}
+
+      {/* Static city markers (no routes) */}
+      {majorCities.map((city) => (
+        <Marker
+          key={city.name}
+          position={[city.lat, city.lng]}
+          icon={createCityIcon(city.offsetX)}
+        >
+          <Popup>
+            <div className="text-center">
+              <strong>{city.name}</strong>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
 
       {/* Farmer directory markers (farmers mode) */}
       {mode === 'farmers' && farmers.map((farmer) => {

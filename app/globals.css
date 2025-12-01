@@ -234,3 +234,14 @@
 .bg-black .leaflet-container {
   background-color: #000;
 }
+
+/* Apply app font family to Leaflet popups */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-content {
+  font-family: "forma-djr-micro", sans-serif;
+}
+
+/* Hide close button and center content in presentation view popups */
+.leaflet-popup-close-button {
+  display: none;
+}

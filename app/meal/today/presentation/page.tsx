@@ -276,7 +276,7 @@ export default function PresenationMealDetailPage() {
         <div className="flex items-center justify-between max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 py-6">
           <div className="">
             <h1>{meal.name}</h1>
-            <p>{meal.description}</p>
+            <p className="text-lg">{meal.description}</p>
           </div>
           <button
             onClick={() => {
@@ -338,6 +338,18 @@ export default function PresenationMealDetailPage() {
                     <div>
                       <h3 className="text-2xl font-medium mb-2">{farmerName}</h3>
                       <p className="text-base mb-4">{farmerAddress}</p>
+                      
+                      {/* Distance Display */}
+                      <div className="mb-4 inline-flex items-center gap-2 bg-gray-100 rounded-lg px-4 py-2">
+                        <MapPin className="h-5 w-5 text-gray-600" />
+                        <div>
+                          <span className="text-2xl font-semibold text-black">
+                            {veg.distance.toFixed(1)} km
+                          </span>
+                          <p className="text-xs text-gray-600">Entfernung</p>
+                        </div>
+                      </div>
+                      
                       {/* Vegetables */}
                       {farmerVegetables.length > 0 && (
                         <div className="flex flex-wrap gap-2">
