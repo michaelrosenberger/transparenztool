@@ -192,18 +192,33 @@ export default function MapComponent({
     return points;
   };
 
-  // Generate route using curved fallback (OSRM API is unreliable due to CORS/rate limiting)
+  // Fetch route using backend API proxy (avoids CORS issues)
   const fetchRoute = async (start: [number, number], end: [number, number], routeKey: string) => {
-    console.log(`🗺️ Generating curved route for ${routeKey}`);
+    try {
+      // Call our backend API which proxies to OSRM
+      const response = await fetch(
+        `/api/route?start=${start[0]},${start[1]}&end=${end[0]},${end[1]}`,
+        { 
+          signal: AbortSignal.timeout(12000),
+          cache: 'no-store'
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.success && data.coordinates && data.coordinates.length > 2) {
+          setRoutes(prev => ({ ...prev, [routeKey]: data.coordinates }));
+          return;
+        }
+      }
+    } catch (error) {
+      // Silently fall back to curved route
+    }
     
-    // Use curved route directly - OSRM API is unreliable
+    // Fallback to curved route if OSRM fails
     const curvedRoute = generateCurvedRoute(start, end);
-    console.log(`✅ Generated realistic curved route with ${curvedRoute.length} points for ${routeKey}`);
-    
-    setRoutes(prev => {
-      const updated = { ...prev, [routeKey]: curvedRoute };
-      return updated;
-    });
+    setRoutes(prev => ({ ...prev, [routeKey]: curvedRoute }));
   };
 
   // Use precomputed routes or fetch new ones
@@ -221,7 +236,6 @@ export default function MapComponent({
       if (isPresentationMode && !initialRoutesLoaded) {
         // In presentation mode, pre-fetch ALL routes on initial load
         setIsLoadingRoutes(true);
-        console.log('🎬 Presentation mode: Pre-fetching all routes...');
         
         // Fetch all farmer routes with staggered delays
         vegetables.forEach((veg, index) => {
@@ -251,7 +265,6 @@ export default function MapComponent({
         setTimeout(() => {
           setInitialRoutesLoaded(true);
           setIsLoadingRoutes(false);
-          console.log('✅ All routes loaded for presentation mode');
         }, (vegetables.length + 1) * 300 + 3000); // Extra 3 seconds for API calls
       } else if (!isPresentationMode) {
         // In normal mode, fetch routes for all vegetables with staggered delays to avoid rate limiting
