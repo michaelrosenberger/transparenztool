@@ -5,6 +5,55 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, Circle, useMap } from
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
+// Component to handle map recentering in presentation mode
+function MapRecenter({ 
+  highlightedFarmer, 
+  vegetables, 
+  storageLocation, 
+  userLocation 
+}: { 
+  highlightedFarmer: string | null | undefined;
+  vegetables: VegetableSource[];
+  storageLocation: { lat: number; lng: number; address: string; name?: string } | null;
+  userLocation: { lat: number; lng: number } | null;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (highlightedFarmer !== null && highlightedFarmer !== undefined) {
+      // Find the highlighted farmer's location
+      const highlightedVeg = vegetables.find(veg => veg.farmer === highlightedFarmer);
+      
+      if (highlightedVeg && storageLocation) {
+        const points: L.LatLngExpression[] = [
+          [highlightedVeg.location.lat, highlightedVeg.location.lng],
+          [storageLocation.lat, storageLocation.lng],
+        ];
+        
+        if (userLocation) {
+          points.push([userLocation.lat, userLocation.lng]);
+        }
+        
+        // Fit bounds to show all three points with padding
+        // Add extra left padding to account for the overlay (25% of map width)
+        const bounds = L.latLngBounds(points);
+        const mapSize = map.getSize();
+        const leftPadding = mapSize.x * 0.25; // 25% of map width
+        
+        map.fitBounds(bounds, { 
+          paddingTopLeft: [leftPadding + 50, 50],
+          paddingBottomRight: [50, 50],
+          maxZoom: 13,
+          animate: true,
+          duration: 1
+        });
+      }
+    }
+  }, [highlightedFarmer, vegetables, storageLocation, userLocation, map]);
+
+  return null;
+}
+
 // Fix for default marker icons in React-Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -73,13 +122,8 @@ function FitBounds({ vegetables, userLocation, storageLocation, farmers, highlig
   const map = useMap();
 
   useEffect(() => {
-    // In presentation mode (when highlightedFarmer is provided), use fixed Niederösterreich view
+    // In presentation mode, MapRecenter handles the zoom/centering
     if (highlightedFarmer !== null && highlightedFarmer !== undefined) {
-      // Set fixed view for Niederösterreich
-      map.setView([48.2082, 15.6378], 9, {
-        animate: true,
-        duration: 0.5
-      });
       return;
     }
 
@@ -464,6 +508,16 @@ export default function MapComponent({
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png"
+        />
+      )}
+      
+      {/* Recenter map when highlighted farmer changes in presentation mode */}
+      {highlightedFarmer !== null && highlightedFarmer !== undefined && storageLocation && (
+        <MapRecenter 
+          highlightedFarmer={highlightedFarmer}
+          vegetables={vegetables}
+          storageLocation={storageLocation}
+          userLocation={userLocation || null}
         />
       )}
       
