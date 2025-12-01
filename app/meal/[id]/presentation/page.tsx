@@ -54,16 +54,118 @@ export default function PresenationMealDetailPage() {
   const [farmerProfiles, setFarmerProfiles] = useState<Map<string, FarmerProfile>>(new Map());
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [precomputedRoutes, setPrecomputedRoutes] = useState<Map<string, [number, number][]>>(new Map());
   
   const params = useParams();
   const supabase = useMemo(() => createClient(), []);
   const mealId = params.id as string;
 
+  // Generate a realistic curved route instead of straight line
+  const generateCurvedRoute = (start: [number, number], end: [number, number]): [number, number][] => {
+    const points: [number, number][] = [start];
+    
+    // Calculate distance and direction
+    const latDiff = end[0] - start[0];
+    const lngDiff = end[1] - start[1];
+    const distance = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff);
+    
+    // Create intermediate points for a more realistic route
+    const numPoints = Math.max(10, Math.floor(distance * 1000)); // More points for longer distances
+    
+    for (let i = 1; i < numPoints; i++) {
+      const progress = i / numPoints;
+      
+      // Add some curve to make it look more like a real road
+      const curveFactor = Math.sin(progress * Math.PI) * 0.001; // Small curve
+      const roadOffset = (Math.random() - 0.5) * 0.0005; // Small random offset for realism
+      
+      const lat = start[0] + (latDiff * progress) + curveFactor + roadOffset;
+      const lng = start[1] + (lngDiff * progress) + roadOffset;
+      
+      points.push([lat, lng]);
+    }
+    
+    points.push(end);
+    return points;
+  };
+
+  // Function to fetch route data with fallback to curved route
+  const fetchRouteData = async (start: [number, number], end: [number, number]): Promise<[number, number][]> => {
+    // Try OSRM API first, fallback to curved route if it fails
+    console.log(`🌐 Trying OSRM API for route ${start} → ${end}`);
+    
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+      const response = await fetch(
+        `https://router.project-osrm.org/route/v1/driving/${start[1]},${start[0]};${end[1]},${end[0]}?overview=full&geometries=geojson`,
+        { 
+          signal: controller.signal,
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'TransparenzTool/1.0'
+          }
+        }
+      );
+      
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`📊 OSRM API Response:`, data);
+        
+        if (data.routes && data.routes[0] && data.routes[0].geometry && data.routes[0].geometry.coordinates) {
+          const coordinates = data.routes[0].geometry.coordinates.map(
+            (coord: [number, number]) => [coord[1], coord[0]] as [number, number]
+          );
+          
+          if (coordinates.length > 2) {
+            console.log(`✅ Got REAL route from OSRM: ${coordinates.length} points`);
+            return coordinates;
+          } else {
+            console.warn(`⚠️ OSRM returned route with only ${coordinates.length} points (too few)`);
+          }
+        } else {
+          console.warn(`⚠️ OSRM response structure invalid:`, {
+            hasRoutes: !!data.routes,
+            routesLength: data.routes?.length,
+            hasGeometry: !!data.routes?.[0]?.geometry,
+            hasCoordinates: !!data.routes?.[0]?.geometry?.coordinates
+          });
+        }
+      } else {
+        console.error(`❌ OSRM API HTTP Error: ${response.status} ${response.statusText}`);
+        try {
+          const errorData = await response.text();
+          console.error(`❌ OSRM Error Response:`, errorData);
+        } catch (e) {
+          console.error(`❌ Could not read error response`);
+        }
+      }
+      
+      console.warn(`⚠️ OSRM API call unsuccessful, using straight line fallback`);
+    } catch (error) {
+      console.error(`❌ OSRM API Exception:`, {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        type: typeof error,
+        isAbortError: error instanceof Error && error.name === 'AbortError',
+        isNetworkError: error instanceof TypeError && error.message.includes('fetch'),
+        fullError: error
+      });
+    }
+    // Fallback to straight line
+    console.log(`📏 Using straight line fallback for ${start} → ${end}`);
+    return [start, end];
+  };
+
   useEffect(() => {
     const loadMealData = async () => {
       try {
         // Set default location immediately
-        setUserLocation({ lat: 48.2082, lng: 16.3738 }); // Vienna default
+        setUserLocation({ lat: 48.203187, lng: 15.637051 }); // Vienna default
         
         // Try to get user's actual location
         if (navigator.geolocation) {
@@ -75,7 +177,21 @@ export default function PresenationMealDetailPage() {
               });
             },
             (error) => {
-              console.error("Error getting location:", error);
+              // Provide more detailed error information
+              let errorMessage = "Unknown geolocation error";
+              switch(error.code) {
+                case error.PERMISSION_DENIED:
+                  errorMessage = "User denied the request for Geolocation";
+                  break;
+                case error.POSITION_UNAVAILABLE:
+                  errorMessage = "Location information is unavailable";
+                  break;
+                case error.TIMEOUT:
+                  errorMessage = "The request to get user location timed out";
+                  break;
+              }
+              console.info("ℹ️ Geolocation not available:", errorMessage, "- using default location");
+              // Continue with default location - this is expected behavior
             },
             {
               timeout: 10000,
@@ -96,6 +212,54 @@ export default function PresenationMealDetailPage() {
     loadMealData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mealId]);
+
+  // Precompute all routes when meal data is loaded
+  useEffect(() => {
+    if (!meal || !userLocation) return;
+
+    const precomputeAllRoutes = async () => {
+      console.log('🚀 Precomputing all routes for faster switching...');
+      const routeMap = new Map<string, [number, number][]>();
+      
+      const storageLocation = { 
+        lat: meal.storage_lat, 
+        lng: meal.storage_lng 
+      };
+
+      // Get unique farmers to avoid duplicate route calculations
+      const uniqueFarmers = Array.from(new Map(meal.vegetables.map(veg => [veg.farmer_name, veg])).values());
+      
+      for (const veg of uniqueFarmers) {
+        const farmCoords: [number, number] = [veg.lat, veg.lng];
+        const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
+        const userCoords: [number, number] = [userLocation.lat, userLocation.lng];
+        
+        // Compute farm to storage route
+        console.log(`🚗 Computing route for ${veg.farmer_name}:`, farmCoords, '→', storageCoords);
+        const farmToStorageRoute = await fetchRouteData(farmCoords, storageCoords);
+        console.log(`📍 Route for ${veg.farmer_name}:`, farmToStorageRoute.length, 'points');
+        routeMap.set(`${veg.farmer_name}-farm-storage`, farmToStorageRoute);
+        
+        // Small delay to be respectful to APIs
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      // Compute storage to user route (only once)
+      console.log(`🏠 Computing storage to user route`);
+      const storageToUserRoute = await fetchRouteData(
+        [storageLocation.lat, storageLocation.lng], 
+        [userLocation.lat, userLocation.lng]
+      );
+      console.log(`🏠 Storage to user route:`, storageToUserRoute.length, 'points');
+      routeMap.set('storage-user', storageToUserRoute);
+      
+      setPrecomputedRoutes(routeMap);
+      console.log('✅ All routes precomputed! Total routes:', routeMap.size);
+      console.log('📊 Route map:', Array.from(routeMap.entries()).map(([key, route]) => `${key}: ${route.length} points`));
+    };
+
+    precomputeAllRoutes();
+  }, [meal, userLocation]);
 
   // Autoplay with fade effect
   useEffect(() => {
@@ -211,7 +375,14 @@ export default function PresenationMealDetailPage() {
       userLocation.lng
     );
     
-    const total = meal.vegetables.reduce((sum, veg) => {
+    // Use only current farmer's vegetables for distance calculation
+    const vegetablesToCalculate = highlightedFarmer 
+      ? meal.vegetables.filter(veg => veg.farmer_name === highlightedFarmer)
+      : meal.vegetables;
+    
+    if (vegetablesToCalculate.length === 0) return "0";
+    
+    const total = vegetablesToCalculate.reduce((sum, veg) => {
       const farmToStorageDistance = calculateDistance(
         veg.lat,
         veg.lng,
@@ -221,7 +392,7 @@ export default function PresenationMealDetailPage() {
       return sum + farmToStorageDistance + storageToUserDistance;
     }, 0);
     
-    return (total / meal.vegetables.length).toFixed(1);
+    return (total / vegetablesToCalculate.length).toFixed(1);
   };
 
   if (loading) {
@@ -256,6 +427,31 @@ export default function PresenationMealDetailPage() {
   // Get unique farmers list for carousel
   const uniqueFarmers = Array.from(new Map(transformedVegetables.map(veg => [veg.farmer, veg])).values());
   const highlightedFarmer = uniqueFarmers[currentSlideIndex]?.farmer || null;
+
+  // Filter vegetables to show only the current farmer's products for cleaner map display
+  const currentFarmerVegetables = highlightedFarmer 
+    ? transformedVegetables.filter(veg => veg.farmer === highlightedFarmer)
+    : transformedVegetables;
+
+  // Get precomputed routes for current farmer
+  const currentRoutes: { [key: string]: [number, number][] } = {};
+  if (highlightedFarmer) {
+    const farmRoute = precomputedRoutes.get(`${highlightedFarmer}-farm-storage`);
+    const userRoute = precomputedRoutes.get('storage-user');
+    
+    console.log(`🔄 Switching to farmer: ${highlightedFarmer}`);
+    console.log(`📍 Farm route available:`, farmRoute ? `${farmRoute.length} points` : 'none');
+    console.log(`🏠 User route available:`, userRoute ? `${userRoute.length} points` : 'none');
+    
+    if (farmRoute && farmRoute.length > 0) {
+      currentRoutes['farm-0-storage'] = farmRoute;
+      console.log(`✅ Using precomputed farm route (${farmRoute.length} points)`);
+    }
+    if (userRoute && userRoute.length > 0) {
+      currentRoutes['storage-user'] = userRoute;
+      console.log(`✅ Using precomputed user route (${userRoute.length} points)`);
+    }
+  }
 
   return (
     <>
@@ -362,7 +558,7 @@ export default function PresenationMealDetailPage() {
             })}
         </div>
           <MapComponent dark
-            vegetables={transformedVegetables}
+            vegetables={currentFarmerVegetables}
             userLocation={userLocation}
             storageLocation={{ 
               lat: meal.storage_lat, 
@@ -372,6 +568,7 @@ export default function PresenationMealDetailPage() {
             }}
             mealName={meal.name}
             highlightedFarmer={highlightedFarmer}
+            precomputedRoutes={currentRoutes}
           />
         </div>
 

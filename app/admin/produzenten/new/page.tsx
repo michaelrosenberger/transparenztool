@@ -22,8 +22,10 @@ import {
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
+  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
@@ -324,12 +326,12 @@ export default function NewProducentPage() {
         throw new Error(error.error || "Fehler beim Erstellen des Produzenten");
       }
 
-      setMessage({ type: "success", text: "Produzent erfolgreich erstellt!" });
+      setMessage({ type: "success", text: "Produzent erfolgreich erstellt! Sie werden zur Übersicht weitergeleitet. Sie können auch direkt eine neue Mahlzeit erstellen." });
       
-      // Redirect to overview after 2 seconds
+      // Redirect to overview after 3 seconds with refresh parameter
       setTimeout(() => {
-        router.push("/admin/overview");
-      }, 2000);
+        router.push("/admin/overview?refresh=true");
+      }, 3000);
     } catch (error: any) {
       console.error("Error creating producent:", error);
       setMessage({ type: "error", text: error.message || "Fehler beim Erstellen" });
@@ -363,9 +365,25 @@ export default function NewProducentPage() {
                 {message?.text}
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogAction onClick={() => setMessage(null)}>
-              OK
-            </AlertDialogAction>
+            <AlertDialogFooter>
+              {message?.type === "success" ? (
+                <>
+                  <AlertDialogCancel onClick={() => setMessage(null)}>
+                    Zur Übersicht
+                  </AlertDialogCancel>
+                  <AlertDialogAction onClick={() => {
+                    setMessage(null);
+                    router.push("/admin/meals?refresh=true");
+                  }}>
+                    Neue Mahlzeit erstellen
+                  </AlertDialogAction>
+                </>
+              ) : (
+                <AlertDialogAction onClick={() => setMessage(null)}>
+                  OK
+                </AlertDialogAction>
+              )}
+            </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
 

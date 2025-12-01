@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { checkAdminAuth } from "@/lib/auth/checkAdminAuth";
 import Card from "@/app/components/Card";
@@ -63,6 +63,7 @@ interface CombinedUser {
 
 export default function AdminOverviewPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<CombinedUser[]>([]);
@@ -87,8 +88,17 @@ export default function AdminOverviewPage() {
           return;
         }
 
-        await loadUsers();
+        // Force refresh if coming from producer creation
+        const shouldForceRefresh = searchParams.get('refresh') === 'true';
+        await loadUsers(shouldForceRefresh);
         setLoading(false);
+
+        // Check if we should show a success message for new producer
+        if (shouldForceRefresh) {
+          setMessage({ type: "success", text: "Produzent erfolgreich erstellt und zur Liste hinzugefügt!" });
+          // Clean up the URL parameter
+          router.replace("/admin/overview", { scroll: false });
+        }
       } catch (error) {
         console.error('Error in checkUserAndLoadData:', error);
         router.push("/");
@@ -96,11 +106,14 @@ export default function AdminOverviewPage() {
     };
 
     checkUserAndLoadData();
-  }, []);
+  }, [searchParams]);
 
-  const loadUsers = async () => {
+  const loadUsers = async (forceRefresh = false) => {
     try {
-      const response = await fetch("/api/admin/users");
+      const url = forceRefresh 
+        ? `/api/admin/users?refresh=${Date.now()}` 
+        : "/api/admin/users";
+      const response = await fetch(url);
       
       if (!response.ok) {
         setUsers([]);

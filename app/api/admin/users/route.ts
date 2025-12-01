@@ -8,11 +8,21 @@ let usersCache: { data: any; timestamp: number } | null = null;
 let usersFetchPromise: Promise<any> | null = null;
 const CACHE_DURATION = 60000; // 60 seconds - increased to handle multiple tab opens
 
-export async function GET() {
+// Export function to invalidate cache
+export function invalidateUsersCache() {
+  usersCache = null;
+  usersFetchPromise = null;
+}
+
+export async function GET(request: Request) {
   try {
-    // Check cache FIRST before doing any auth checks
+    // Check if refresh is requested via URL parameter
+    const url = new URL(request.url);
+    const forceRefresh = url.searchParams.has('refresh');
+
+    // Check cache FIRST before doing any auth checks (unless force refresh is requested)
     // This prevents unnecessary database queries when data is already cached
-    if (usersCache && Date.now() - usersCache.timestamp < CACHE_DURATION) {
+    if (!forceRefresh && usersCache && Date.now() - usersCache.timestamp < CACHE_DURATION) {
       // Still need to verify user is authenticated for cached data
       const supabase = await createClient();
       const { data: { user } } = await supabase.auth.getUser();

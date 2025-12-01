@@ -93,7 +93,7 @@ export default function MealDetailPage() {
       setUser(user);
       
       // Set default location immediately
-      setUserLocation({ lat: 48.2082, lng: 16.3738 }); // Vienna default
+      setUserLocation({ lat: 48.203187, lng: 15.637051 }); // Vienna default
       
       // Try to get user's actual location with timeout
       if (navigator.geolocation) {
@@ -105,7 +105,19 @@ export default function MealDetailPage() {
             });
           },
           (error) => {
-            console.error("Error getting location:", error);
+            let errorMessage = "Unknown geolocation error";
+            switch(error.code) {
+              case error.PERMISSION_DENIED:
+                errorMessage = "User denied the request for Geolocation";
+                break;
+              case error.POSITION_UNAVAILABLE:
+                errorMessage = "Location information is unavailable";
+                break;
+              case error.TIMEOUT:
+                errorMessage = "The request to get user location timed out";
+                break;
+            }
+            console.warn("Geolocation error:", errorMessage, error);
           },
           {
             timeout: 5000, // 5 second timeout

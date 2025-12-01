@@ -54,18 +54,33 @@ interface MapComponentProps {
   
   // Highlighted farmer (for carousel sync)
   highlightedFarmer?: string | null;
+  
+  // Precomputed routes for faster switching
+  precomputedRoutes?: { [key: string]: [number, number][] };
 }
 
 // Component to fit map bounds to show all markers
-function FitBounds({ vegetables, userLocation, storageLocation, farmers }: { 
+function FitBounds({ vegetables, userLocation, storageLocation, farmers, highlightedFarmer }: { 
   vegetables?: VegetableSource[], 
   userLocation?: { lat: number; lng: number } | null,
   storageLocation?: { lat: number; lng: number; address: string; name?: string } | null,
-  farmers?: FarmerProfile[]
+  farmers?: FarmerProfile[],
+  highlightedFarmer?: string | null
 }) {
   const map = useMap();
 
   useEffect(() => {
+    // In presentation mode (when highlightedFarmer is provided), use fixed Niederösterreich view
+    if (highlightedFarmer !== null && highlightedFarmer !== undefined) {
+      // Set fixed view for Niederösterreich
+      map.setView([48.2082, 15.6378], 9, {
+        animate: true,
+        duration: 0.5
+      });
+      return;
+    }
+
+    // Normal mode: fit to all bounds
     const bounds: [number, number][] = [];
     
     // Add all farm locations from vegetables
@@ -103,7 +118,7 @@ function FitBounds({ vegetables, userLocation, storageLocation, farmers }: {
         duration: 0.5
       });
     }
-  }, [map, vegetables, userLocation, storageLocation, farmers]);
+  }, [map, vegetables, userLocation, storageLocation, farmers, highlightedFarmer]);
 
   return null;
 }
@@ -116,57 +131,124 @@ export default function MapComponent({
   farmers = [],
   mode = 'meal',
   dark = false,
-  highlightedFarmer = null
+  highlightedFarmer = null,
+  precomputedRoutes = {}
 }: MapComponentProps) {
   // State for storing route coordinates
   const [routes, setRoutes] = useState<{
     [key: string]: [number, number][];
   }>({});
 
-  // Fetch route from OSRM API
+  // Generate curved route instead of straight line
+  const generateCurvedRoute = (start: [number, number], end: [number, number]): [number, number][] => {
+    const points: [number, number][] = [start];
+    
+    const latDiff = end[0] - start[0];
+    const lngDiff = end[1] - start[1];
+    const distance = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff);
+    
+    const numPoints = Math.max(15, Math.floor(distance * 1000));
+    
+    for (let i = 1; i < numPoints; i++) {
+      const progress = i / numPoints;
+      
+      const curveFactor = Math.sin(progress * Math.PI) * 0.001;
+      const roadOffset = (Math.random() - 0.5) * 0.0005;
+      
+      const lat = start[0] + (latDiff * progress) + curveFactor + roadOffset;
+      const lng = start[1] + (lngDiff * progress) + roadOffset;
+      
+      points.push([lat, lng]);
+    }
+    
+    points.push(end);
+    return points;
+  };
+
+  // Fetch route from OSRM API with curved fallback
   const fetchRoute = async (start: [number, number], end: [number, number], routeKey: string) => {
+    console.log(`🌐 Fetching route for ${routeKey} from OSRM API`);
+    
     try {
-      // Add timeout to prevent hanging
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
 
       const response = await fetch(
         `https://router.project-osrm.org/route/v1/driving/${start[1]},${start[0]};${end[1]},${end[0]}?overview=full&geometries=geojson`,
-        { signal: controller.signal }
+        { 
+          signal: controller.signal,
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'TransparenzTool/1.0'
+          }
+        }
       );
       
       clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`📊 OSRM API Response for ${routeKey}:`, data);
+        
+        if (data.routes && data.routes[0] && data.routes[0].geometry && data.routes[0].geometry.coordinates) {
+          const coordinates = data.routes[0].geometry.coordinates.map(
+            (coord: [number, number]) => [coord[1], coord[0]] as [number, number]
+          );
+          
+          if (coordinates.length > 2) {
+            console.log(`✅ Got REAL OSRM route for ${routeKey}: ${coordinates.length} points`);
+            setRoutes(prev => ({ ...prev, [routeKey]: coordinates }));
+            return;
+          } else {
+            console.warn(`⚠️ OSRM returned route with only ${coordinates.length} points for ${routeKey}`);
+          }
+        } else {
+          console.warn(`⚠️ OSRM response structure invalid for ${routeKey}:`, {
+            hasRoutes: !!data.routes,
+            routesLength: data.routes?.length,
+            hasGeometry: !!data.routes?.[0]?.geometry,
+            hasCoordinates: !!data.routes?.[0]?.geometry?.coordinates
+          });
+        }
+      } else {
+        console.error(`❌ OSRM API HTTP Error for ${routeKey}: ${response.status} ${response.statusText}`);
+        try {
+          const errorData = await response.text();
+          console.error(`❌ OSRM Error Response for ${routeKey}:`, errorData);
+        } catch (e) {
+          console.error(`❌ Could not read error response for ${routeKey}`);
+        }
       }
-
-      const data = await response.json();
       
-      if (data.routes && data.routes[0]) {
-        const coordinates = data.routes[0].geometry.coordinates.map(
-          (coord: [number, number]) => [coord[1], coord[0]] as [number, number]
-        );
-        setRoutes(prev => ({ ...prev, [routeKey]: coordinates }));
-      } else {
-        // No route found, use straight line
-        setRoutes(prev => ({ ...prev, [routeKey]: [start, end] }));
-      }
+      console.warn(`⚠️ OSRM API call unsuccessful for ${routeKey}, using straight line fallback`);
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        console.warn('Route fetch timeout, using straight line:', routeKey);
-      } else {
-        console.warn('Error fetching route, using straight line:', error);
-      }
-      // Fallback to straight line if routing fails
-      setRoutes(prev => ({ ...prev, [routeKey]: [start, end] }));
+      console.error(`❌ OSRM API Exception for ${routeKey}:`, {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        type: typeof error,
+        isAbortError: error instanceof Error && error.name === 'AbortError',
+        isNetworkError: error instanceof TypeError && error.message.includes('fetch'),
+        isTimeoutError: error instanceof Error && error.name === 'AbortError',
+        fullError: error
+      });
     }
+    
+    // Fallback to straight line
+    console.log(`📏 Using straight line fallback for ${routeKey}`);
+    setRoutes(prev => ({ ...prev, [routeKey]: [start, end] }));
   };
 
-  // Fetch all routes when component mounts or data changes
+  // Use precomputed routes or fetch new ones
   useEffect(() => {
     if (mode === 'meal' && storageLocation) {
-      // Fetch routes from each farm to storage
+      // If we have precomputed routes, use them immediately
+      if (Object.keys(precomputedRoutes).length > 0) {
+        setRoutes(precomputedRoutes);
+        return;
+      }
+      
+      // Otherwise, fetch routes as before
       vegetables.forEach((veg, index) => {
         const farmCoords: [number, number] = [veg.location.lat, veg.location.lng];
         const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
@@ -181,7 +263,7 @@ export default function MapComponent({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vegetables, userLocation, storageLocation, mode]);
+  }, [vegetables, userLocation, storageLocation, mode, precomputedRoutes]);
 
   // Create custom SVG icons for farms and user
   const createCustomIcon = (color: string, imageUrl?: string, highlighted?: boolean) => {
@@ -249,6 +331,11 @@ export default function MapComponent({
   
   // Calculate center point based on all markers
   const calculateCenter = () => {
+    // In presentation mode (when highlightedFarmer is provided), always center on Niederösterreich
+    if (highlightedFarmer !== null && highlightedFarmer !== undefined) {
+      return { lat: 48.2082, lng: 15.6378 }; // Niederösterreich center
+    }
+
     const allPoints: { lat: number; lng: number }[] = [];
     
     // Add all farm locations from vegetables
@@ -286,12 +373,14 @@ export default function MapComponent({
   };
   
   const center = calculateCenter();
+  // Use appropriate zoom level for presentation mode
+  const zoomLevel = (highlightedFarmer !== null && highlightedFarmer !== undefined) ? 9 : 8;
 
   return (
     <MapContainer
       key={dark ? 'dark-map' : 'light-map'}
       center={[center.lat, center.lng]}
-      zoom={8}
+      zoom={zoomLevel}
       minZoom={3}
       maxZoom={18}
       style={{ height: "100%", width: "100%" }}
@@ -316,7 +405,7 @@ export default function MapComponent({
       )}
       
       {/* Automatically fit bounds to show all markers */}
-      <FitBounds vegetables={vegetables} userLocation={userLocation} storageLocation={storageLocation} farmers={farmers} />
+      <FitBounds vegetables={vegetables} userLocation={userLocation} storageLocation={storageLocation} farmers={farmers} highlightedFarmer={highlightedFarmer} />
 
       {/* Storage location marker */}
       {storageLocation && (

@@ -7,8 +7,18 @@ let farmersCache: { data: any; timestamp: number } | null = null;
 let farmersFetchPromise: Promise<any> | null = null;
 const CACHE_DURATION = 60000; // 60 seconds - increased to handle multiple tab opens
 
+// Export function to invalidate cache
+export function invalidateFarmersCache() {
+  farmersCache = null;
+  farmersFetchPromise = null;
+}
+
 export async function GET(request: Request) {
   try {
+    // Check if refresh is requested via URL parameter
+    const url = new URL(request.url);
+    const forceRefresh = url.searchParams.has('refresh');
+
     // Use server client to get authenticated user from cookies
     const supabase = await createServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -29,8 +39,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
     }
 
-    // Return cached data if still valid
-    if (farmersCache && Date.now() - farmersCache.timestamp < CACHE_DURATION) {
+    // Return cached data if still valid (unless force refresh is requested)
+    if (!forceRefresh && farmersCache && Date.now() - farmersCache.timestamp < CACHE_DURATION) {
       return NextResponse.json({ farmers: farmersCache.data });
     }
 

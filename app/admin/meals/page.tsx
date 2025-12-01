@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { checkAdminAuth } from "@/lib/auth/checkAdminAuth";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Card from "@/app/components/Card";
 import Container from "@/app/components/Container";
 import PageSkeleton from "@/app/components/PageSkeleton";
@@ -84,6 +84,7 @@ export default function AdminMealsPage() {
   const [createdMealId, setCreatedMealId] = useState<string | null>(null);
   
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
 
   useEffect(() => {
@@ -117,9 +118,18 @@ export default function AdminMealsPage() {
           // This prevents blocking when multiple tabs are open
         }
         
-        await loadFarmers();
+        // Force refresh if coming from producer creation
+        const shouldForceRefresh = searchParams.get('refresh') === 'true';
+        await loadFarmers(shouldForceRefresh);
         await loadIngredients();
         setLoading(false);
+
+        // Check if we should show a success message for new producer
+        if (shouldForceRefresh) {
+          setMessage({ type: "success", text: "Produzent erfolgreich erstellt und zur Auswahl hinzugefügt!" });
+          // Clean up the URL parameter
+          router.replace("/admin/meals", { scroll: false });
+        }
       } catch (error) {
         console.error('Error in checkUserAndLoadData:', error);
         router.push("/");
@@ -128,7 +138,7 @@ export default function AdminMealsPage() {
 
     checkUserAndLoadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchParams]);
 
   const loadIngredients = async () => {
     try {
@@ -145,11 +155,14 @@ export default function AdminMealsPage() {
     }
   };
 
-  const loadFarmers = async () => {
+  const loadFarmers = async (forceRefresh = false) => {
     try {
       // Call API route to get farmers (requires admin privileges)
       // Auth is handled via cookies on the server side
-      const response = await fetch("/api/admin/farmers");
+      const url = forceRefresh 
+        ? `/api/admin/farmers?refresh=${Date.now()}` 
+        : "/api/admin/farmers";
+      const response = await fetch(url);
 
       if (!response.ok) {
         let errorMessage = "Fehler beim Laden der Produzenten";

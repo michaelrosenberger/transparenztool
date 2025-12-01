@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { isAdmin } from "@/lib/auth/roles";
 
+// Import cache invalidation functions
+import { invalidateUsersCache } from "../users/route";
+import { invalidateFarmersCache } from "../farmers/route";
+
 export async function POST(request: Request) {
   const supabase = await createClient();
 
@@ -103,6 +107,10 @@ export async function POST(request: Request) {
       console.error("Error adding user role:", roleError);
       // Don't fail the request, just log the error
     }
+
+    // Invalidate both caches so the new producer appears immediately in all lists
+    invalidateUsersCache();
+    invalidateFarmersCache();
 
     return NextResponse.json({ 
       success: true,
