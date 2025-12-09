@@ -85,7 +85,13 @@ export default function AllMealsPage() {
   const loadMeals = async (forceRefresh = false) => {
     try {
       const url = forceRefresh ? "/api/admin/meals?refresh=true" : "/api/admin/meals";
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        }
+      });
 
       if (!response.ok) {
         console.error("Error loading meals:", response.statusText);

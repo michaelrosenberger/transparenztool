@@ -2,6 +2,10 @@ import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
+// Disable Next.js caching for this route
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Cache for farmers list to prevent concurrent duplicate requests
 let farmersCache: { data: any; timestamp: number } | null = null;
 let farmersFetchPromise: Promise<any> | null = null;
@@ -18,6 +22,12 @@ export async function GET(request: Request) {
     // Check if refresh is requested via URL parameter
     const url = new URL(request.url);
     const forceRefresh = url.searchParams.has('refresh');
+
+    // If force refresh is requested, invalidate cache immediately
+    if (forceRefresh) {
+      farmersCache = null;
+      farmersFetchPromise = null;
+    }
 
     // Use server client to get authenticated user from cookies
     const supabase = await createServerClient();
@@ -41,13 +51,25 @@ export async function GET(request: Request) {
 
     // Return cached data if still valid (unless force refresh is requested)
     if (!forceRefresh && farmersCache && Date.now() - farmersCache.timestamp < CACHE_DURATION) {
-      return NextResponse.json({ farmers: farmersCache.data });
+      return NextResponse.json({ farmers: farmersCache.data }, {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      });
     }
 
     // If there's already a pending fetch, wait for it
     if (farmersFetchPromise) {
       const farmers = await farmersFetchPromise;
-      return NextResponse.json({ farmers });
+      return NextResponse.json({ farmers }, {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      });
     }
 
     // Create new fetch promise
@@ -113,12 +135,23 @@ export async function GET(request: Request) {
     })();
 
     const farmers = await farmersFetchPromise;
-    return NextResponse.json({ farmers });
+    return NextResponse.json({ farmers }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
+    });
   } catch (error: any) {
     console.error("API error:", error);
     return NextResponse.json(
       { error: error.message || "Internal server error" },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        }
+      }
     );
   }
 }

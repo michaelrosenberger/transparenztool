@@ -113,7 +113,13 @@ export default function AdminOverviewPage() {
       const url = forceRefresh 
         ? `/api/admin/users?refresh=${Date.now()}` 
         : "/api/admin/users";
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        }
+      });
       
       if (!response.ok) {
         setUsers([]);

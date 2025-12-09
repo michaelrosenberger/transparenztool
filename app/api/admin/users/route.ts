@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { isAdmin } from "@/lib/auth/roles";
 
+// Disable Next.js caching for this route
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Cache for user list to prevent concurrent duplicate requests
 let usersCache: { data: any; timestamp: number } | null = null;
 let usersFetchPromise: Promise<any> | null = null;
@@ -20,6 +24,12 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const forceRefresh = url.searchParams.has('refresh');
 
+    // If force refresh is requested, invalidate cache immediately
+    if (forceRefresh) {
+      usersCache = null;
+      usersFetchPromise = null;
+    }
+
     // Check cache FIRST before doing any auth checks (unless force refresh is requested)
     // This prevents unnecessary database queries when data is already cached
     if (!forceRefresh && usersCache && Date.now() - usersCache.timestamp < CACHE_DURATION) {
@@ -30,7 +40,13 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
       // All authenticated users have access
-      return NextResponse.json({ users: usersCache.data });
+      return NextResponse.json({ users: usersCache.data }, {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      });
     }
 
     // Auth check for non-cached requests
@@ -46,7 +62,13 @@ export async function GET(request: Request) {
     // If there's already a pending fetch, wait for it
     if (usersFetchPromise) {
       const users = await usersFetchPromise;
-      return NextResponse.json({ users });
+      return NextResponse.json({ users }, {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      });
     }
 
     // Check if service role key is configured
@@ -124,8 +146,19 @@ export async function GET(request: Request) {
     })();
 
     const users = await usersFetchPromise;
-    return NextResponse.json({ users });
+    return NextResponse.json({ users }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
+    });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch users" }, { 
+      status: 500,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      }
+    });
   }
 }

@@ -2,6 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth/roles";
 
+// Disable Next.js caching for this route
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Cache for meals list to prevent concurrent duplicate requests
 let mealsCache: { data: any; timestamp: number } | null = null;
 let mealsFetchPromise: Promise<any> | null = null;
@@ -30,13 +34,25 @@ export async function GET(request: Request) {
     
     // Check cache AFTER auth
     if (mealsCache && Date.now() - mealsCache.timestamp < CACHE_DURATION) {
-      return NextResponse.json({ meals: mealsCache.data });
+      return NextResponse.json({ meals: mealsCache.data }, {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      });
     }
 
     // If there's already a pending fetch, wait for it
     if (mealsFetchPromise) {
       const meals = await mealsFetchPromise;
-      return NextResponse.json({ meals });
+      return NextResponse.json({ meals }, {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      });
     }
 
     // Create new fetch promise
@@ -59,8 +75,19 @@ export async function GET(request: Request) {
     })();
 
     const meals = await mealsFetchPromise;
-    return NextResponse.json({ meals });
+    return NextResponse.json({ meals }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
+    });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch meals" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch meals" }, { 
+      status: 500,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      }
+    });
   }
 }

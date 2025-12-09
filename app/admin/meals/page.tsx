@@ -162,7 +162,13 @@ export default function AdminMealsPage() {
       const url = forceRefresh 
         ? `/api/admin/farmers?refresh=${Date.now()}` 
         : "/api/admin/farmers";
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        }
+      });
 
       if (!response.ok) {
         let errorMessage = "Fehler beim Laden der Produzenten";

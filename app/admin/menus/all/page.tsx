@@ -72,7 +72,13 @@ export default function AllMenusPage() {
   const loadMenus = async (forceRefresh = false) => {
     try {
       const url = forceRefresh ? "/api/admin/menus?refresh=true" : "/api/admin/menus";
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        }
+      });
 
       if (!response.ok) {
         console.error("Error loading menus:", response.statusText);

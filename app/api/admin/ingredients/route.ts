@@ -2,6 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth/roles";
 
+// Disable Next.js caching for this route
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Cache for ingredients list to prevent concurrent duplicate requests
 let ingredientsCache: { data: any; timestamp: number } | null = null;
 let ingredientsFetchPromise: Promise<any> | null = null;
@@ -30,13 +34,25 @@ export async function GET(request: Request) {
     
     // Check cache AFTER auth
     if (ingredientsCache && Date.now() - ingredientsCache.timestamp < CACHE_DURATION) {
-      return NextResponse.json({ ingredients: ingredientsCache.data });
+      return NextResponse.json({ ingredients: ingredientsCache.data }, {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      });
     }
 
     // If there's already a pending fetch, wait for it
     if (ingredientsFetchPromise) {
       const ingredients = await ingredientsFetchPromise;
-      return NextResponse.json({ ingredients });
+      return NextResponse.json({ ingredients }, {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      });
     }
 
     // Create new fetch promise
@@ -59,8 +75,19 @@ export async function GET(request: Request) {
     })();
 
     const ingredients = await ingredientsFetchPromise;
-    return NextResponse.json({ ingredients });
+    return NextResponse.json({ ingredients }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
+    });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch ingredients" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch ingredients" }, { 
+      status: 500,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      }
+    });
   }
 }

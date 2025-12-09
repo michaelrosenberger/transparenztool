@@ -71,7 +71,13 @@ export default function ZutatenPage() {
   const loadIngredients = async (forceRefresh = false) => {
     try {
       const url = forceRefresh ? "/api/admin/ingredients?refresh=true" : "/api/admin/ingredients";
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        }
+      });
 
       if (!response.ok) {
         console.error("Error loading ingredients:", response.statusText);
