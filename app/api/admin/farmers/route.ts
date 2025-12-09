@@ -94,6 +94,7 @@ export async function GET(request: Request) {
             .join(", ");
           
           return {
+            id: user.id,
             user_id: user.id,
             full_name: metadata.business_name || metadata.full_name || "Unbekannter Produzent",
             vegetables: metadata.vegetables,

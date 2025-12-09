@@ -626,9 +626,9 @@ export default function MapComponent({
               >
                 <Popup>
                   <div className="text-base text-center">
-                    <strong className="text-lg">{veg.farmer}</strong>
+                    <strong className="text-xl">{veg.farmer}</strong>
                     <br />
-                    <span>{veg.location.address}</span>
+                    <span className="text-lg">{veg.location.address}</span>
                     <br />
                     <span className="text-lg font-semibold text-green-700">
                       {veg.distance.toFixed(1)} km entfernt

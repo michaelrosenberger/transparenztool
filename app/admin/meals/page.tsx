@@ -610,8 +610,8 @@ export default function AdminMealsPage() {
                     <SelectValue placeholder="Zutat wählen" />
                   </SelectTrigger>
                   <SelectContent>
-                    {getAvailableVegetables().map((veg) => (
-                      <SelectItem key={veg} value={veg}>
+                    {getAvailableVegetables().map((veg, index) => (
+                      <SelectItem key={`${selectedFarmer}-${veg}-${index}`} value={veg}>
                         {veg}
                       </SelectItem>
                     ))}

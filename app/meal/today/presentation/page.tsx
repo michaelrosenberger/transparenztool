@@ -274,7 +274,7 @@ export default function PresenationMealDetailPage() {
     <>
       <Container dark fullWidth>
         <div className="flex items-center justify-between max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 py-6">
-          <div className="">
+          <div className="page-title">
             <h1>{meal.name}</h1>
             <p className="text-lg">{meal.description}</p>
           </div>
@@ -283,7 +283,7 @@ export default function PresenationMealDetailPage() {
               const ingredientsSection = document.getElementById('ingredients-section');
               ingredientsSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }}
-            className="flex items-center justify-center gap-2 px-3 max-sm:px-2 py-3 cursor-pointer bg-white text-sm lg:text-base text-black rounded-full font-medium hover:bg-gray-100 transition-colors"
+            className="flex items-center justify-center gap-2 px-3 max-sm:px-2 py-3 cursor-pointer bg-white text-sm lg:text-lg text-black rounded-full font-medium hover:bg-gray-100 transition-colors"
           >
             <MapPin className="h-3 w-3 lg:h-5 lg:w-5" />
             Deine Zutaten sind ~ {calculateAverageDistance()} km zu dir gereist
@@ -336,8 +336,8 @@ export default function PresenationMealDetailPage() {
                   {/* Farmer Info */}
                   <div className="flex gap-2 justify-between">
                     <div>
-                      <h3 className="text-2xl font-medium mb-2">{farmerName}</h3>
-                      <p className="text-base mb-4">{farmerAddress}</p>
+                      <h3 className="text-3xl font-medium mb-2">{farmerName}</h3>
+                      <p className="text-lg mb-4">{farmerAddress}</p>
                       
                       {/* Distance Display */}
                       <div className="mb-4 inline-flex items-center gap-2 bg-gray-100 rounded-lg px-4 py-2">
@@ -346,7 +346,7 @@ export default function PresenationMealDetailPage() {
                           <span className="text-2xl font-semibold text-black">
                             {veg.distance.toFixed(1)} km
                           </span>
-                          <p className="text-xs text-gray-600">Entfernung</p>
+                          <p className="text-smtext-gray-600">Entfernung</p>
                         </div>
                       </div>
                       
@@ -357,7 +357,7 @@ export default function PresenationMealDetailPage() {
                             <Badge
                               key={vegIndex}
                               variant="outline"
-                              className="px-3 py-1 text-sm border-black rounded-full"
+                              className="px-3 py-1 text-md border-black rounded-full"
                             >
                               {vegetable}
                             </Badge>
