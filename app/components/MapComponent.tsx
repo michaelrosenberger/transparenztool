@@ -225,49 +225,8 @@ export default function MapComponent({
   // Track if initial routes have been loaded in presentation mode
   const [initialRoutesLoaded, setInitialRoutesLoaded] = useState(false);
   
-  // Track successful route fetches (real OSRM routes, not fallbacks)
+  // Track successful route fetches (real OSRM routes only, no fallbacks)
   const [successfulRoutes, setSuccessfulRoutes] = useState(new Set<string>());
-  const [expectedRouteCount, setExpectedRouteCount] = useState(0);
-
-  // Generate curved route that simulates realistic road paths
-  const generateCurvedRoute = (start: [number, number], end: [number, number]): [number, number][] => {
-    const points: [number, number][] = [start];
-    
-    const latDiff = end[0] - start[0];
-    const lngDiff = end[1] - start[1];
-    const distance = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff);
-    
-    // More points for longer distances to make it look more realistic
-    const numPoints = Math.max(30, Math.floor(distance * 2000));
-    
-    // Add some randomness to simulate road curvature
-    const seed = start[0] + start[1] + end[0] + end[1];
-    let angle = seed * 100;
-    
-    for (let i = 1; i < numPoints; i++) {
-      const progress = i / numPoints;
-      
-      // Create natural-looking curves using sine waves at different frequencies
-      const largeCurve = Math.sin(progress * Math.PI * 2) * 0.002;
-      const mediumCurve = Math.sin(progress * Math.PI * 4 + angle) * 0.001;
-      const smallCurve = Math.sin(progress * Math.PI * 8 + angle * 2) * 0.0005;
-      
-      // Perpendicular offset to create road-like curves
-      const perpLat = -lngDiff / distance;
-      const perpLng = latDiff / distance;
-      
-      const totalCurve = largeCurve + mediumCurve + smallCurve;
-      
-      const lat = start[0] + (latDiff * progress) + (perpLat * totalCurve);
-      const lng = start[1] + (lngDiff * progress) + (perpLng * totalCurve);
-      
-      points.push([lat, lng]);
-      angle += 0.1;
-    }
-    
-    points.push(end);
-    return points;
-  };
 
   // Fetch route using backend API proxy (avoids CORS issues)
   const fetchRoute = async (start: [number, number], end: [number, number], routeKey: string) => {
@@ -284,6 +243,7 @@ export default function MapComponent({
         const data = await response.json();
         
         if (data.success && data.coordinates && data.coordinates.length > 2) {
+          console.log(`[MapComponent] ✅ Successfully loaded route ${routeKey} (${data.coordinates.length} points)`);
           setRoutes(prev => ({ ...prev, [routeKey]: data.coordinates }));
           // Mark this route as successful (real OSRM route)
           setSuccessfulRoutes(prev => new Set([...prev, routeKey]));
@@ -291,12 +251,11 @@ export default function MapComponent({
         }
       }
     } catch (error) {
-      // Silent error handling
+      console.warn(`[MapComponent] ⚠️ Failed to load route ${routeKey}:`, error instanceof Error ? error.message : error);
     }
     
-    // Fallback to curved route if OSRM fails
-    const curvedRoute = generateCurvedRoute(start, end);
-    setRoutes(prev => ({ ...prev, [routeKey]: curvedRoute }));
+    // Don't use fallback - only show real OSRM routes
+    console.log(`[MapComponent] ❌ Skipping route ${routeKey} - no fallback`);
   };
 
   // Use precomputed routes or fetch new ones
@@ -314,10 +273,9 @@ export default function MapComponent({
       if (isPresentationMode && !initialRoutesLoaded) {
         // In presentation mode, pre-fetch ALL routes on initial load
         setIsLoadingRoutes(true);
-        const totalRoutes = vegetables.length + (userLocation ? 1 : 0);
-        setExpectedRouteCount(totalRoutes);
+        console.log(`[MapComponent] 🚀 Starting route loading (presentation mode) - ${vegetables.length} farm routes + 1 user route`);
         
-        // Fetch all farmer routes with staggered delays
+        // Fetch all farmer routes with 1 second delays (OSRM rate limit compliance)
         vegetables.forEach((veg, index) => {
           const farmCoords: [number, number] = [veg.location.lat, veg.location.lng];
           const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
@@ -326,8 +284,9 @@ export default function MapComponent({
           if (!requestedRoutes.has(routeKey)) {
             requestedRoutes.add(routeKey);
             setTimeout(() => {
+              console.log(`[MapComponent] 📍 Fetching route ${index + 1}/${vegetables.length}: ${veg.farmer}`);
               fetchRoute(farmCoords, storageCoords, routeKey);
-            }, index * 300);
+            }, index * 1000); // 1 second delay to respect OSRM rate limit
           }
         });
         
@@ -337,22 +296,25 @@ export default function MapComponent({
           const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
           const userCoords: [number, number] = [userLocation.lat, userLocation.lng];
           setTimeout(() => {
+            console.log(`[MapComponent] 🏠 Fetching final route: storage to user`);
             fetchRoute(storageCoords, userCoords, 'storage-user');
-          }, vegetables.length * 300);
+          }, vegetables.length * 1000); // 1 second delay to respect OSRM rate limit
         }
         
-        // Mark as loaded and stop loading after all routes should be fetched
+        // Mark as loaded after all routes should be fetched (with generous buffer)
+        const totalTime = (vegetables.length + 1) * 1000 + 15000; // 15 seconds buffer for API calls
+        console.log(`[MapComponent] ⏱️ Will finish loading in ~${Math.round(totalTime / 1000)} seconds`);
         setTimeout(() => {
           setInitialRoutesLoaded(true);
           setIsLoadingRoutes(false);
-        }, (vegetables.length + 1) * 300 + 5000); // Extra 5 seconds for API calls
+          console.log(`[MapComponent] ✅ Route loading complete`);
+        }, totalTime);
       } else if (!isPresentationMode && !initialRoutesLoaded) {
         // In normal mode, pre-fetch all routes with loading state
         setIsLoadingRoutes(true);
-        const totalRoutes = vegetables.length + (userLocation ? 1 : 0);
-        setExpectedRouteCount(totalRoutes);
+        console.log(`[MapComponent] 🚀 Starting route loading (normal mode) - ${vegetables.length} farm routes + 1 user route`);
         
-        // Fetch routes for all vegetables with staggered delays to avoid rate limiting
+        // Fetch routes for all vegetables with 1 second delays (OSRM rate limit compliance)
         vegetables.forEach((veg, index) => {
           const farmCoords: [number, number] = [veg.location.lat, veg.location.lng];
           const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
@@ -360,10 +322,10 @@ export default function MapComponent({
           
           if (!requestedRoutes.has(routeKey)) {
             requestedRoutes.add(routeKey);
-            // Stagger requests by 200ms each to avoid rate limiting
             setTimeout(() => {
+              console.log(`[MapComponent] 📍 Fetching route ${index + 1}/${vegetables.length}`);
               fetchRoute(farmCoords, storageCoords, routeKey);
-            }, index * 200);
+            }, index * 1000); // 1 second delay to respect OSRM rate limit
           }
         });
         
@@ -372,17 +334,20 @@ export default function MapComponent({
           requestedRoutes.add('storage-user');
           const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
           const userCoords: [number, number] = [userLocation.lat, userLocation.lng];
-          // Delay this by the number of vegetables * 200ms
           setTimeout(() => {
+            console.log(`[MapComponent] 🏠 Fetching final route: storage to user`);
             fetchRoute(storageCoords, userCoords, 'storage-user');
-          }, vegetables.length * 200);
+          }, vegetables.length * 1000); // 1 second delay to respect OSRM rate limit
         }
         
-        // Mark as loaded and stop loading after all routes should be fetched
+        // Mark as loaded after all routes should be fetched (with generous buffer)
+        const totalTime = (vegetables.length + 1) * 1000 + 15000; // 15 seconds buffer for API calls
+        console.log(`[MapComponent] ⏱️ Will finish loading in ~${Math.round(totalTime / 1000)} seconds`);
         setTimeout(() => {
           setInitialRoutesLoaded(true);
           setIsLoadingRoutes(false);
-        }, (vegetables.length + 1) * 200 + 5000); // Extra 5 seconds for API calls
+          console.log(`[MapComponent] ✅ Route loading complete`);
+        }, totalTime);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
