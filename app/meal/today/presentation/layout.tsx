@@ -8,7 +8,7 @@ export default function PresentationLayout({
       {children}
       <style>{`
       .leaflet-control-container {
-        display: none;;
+        display: none;
       }
         .page-title h1 {
           font-size: 55px;

@@ -272,7 +272,18 @@ export default function PresenationMealDetailPage() {
 
   return (
     <>
-      <Container dark fullWidth>
+    <style>{`
+      .leaflet-marker-icon.city-marker circle {
+        fill: black;
+        stroke: none;
+      }
+      .leaflet-marker-icon.city-marker path {
+        stroke: white;
+      }
+      .custom-marker-ingredient path { fill: orange; }
+      .custom-marker-user path { fill: black; }
+    `}</style>
+      <Container fullWidth>
         <div className="flex items-center justify-between max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 py-6">
           <div className="page-title">
             <h1>{meal.name}</h1>
@@ -283,7 +294,7 @@ export default function PresenationMealDetailPage() {
               const ingredientsSection = document.getElementById('ingredients-section');
               ingredientsSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }}
-            className="flex items-center justify-center gap-2 whitespace-nowrap px-3 max-sm:px-2 py-3 cursor-pointer bg-white text-sm lg:text-lg text-black rounded-full font-medium hover:bg-gray-100 transition-colors"
+            className="flex items-center justify-center whitespace-nowrap gap-2 px-3 max-sm:px-2 py-3 cursor-pointer bg-black text-sm lg:text-lg text-white rounded-full font-medium transition-colors"
           >
             <MapPin className="h-3 w-3 lg:h-5 lg:w-5" />
             Deine Zutaten sind ~ {calculateAverageDistance()} km zu dir gereist
@@ -397,7 +408,8 @@ export default function PresenationMealDetailPage() {
               );
             })}
         </div>
-          <MapComponent dark
+          <MapComponent
+            lightMapStyle="carto-positron"
             vegetables={transformedVegetables}
             userLocation={userLocation}
             storageLocation={{ 

@@ -129,6 +129,8 @@ interface MapComponentProps {
   
   // Dark mode
   dark?: boolean;
+
+  lightMapStyle?: 'osm' | 'osm-de' | 'carto-positron';
   
   // Highlighted farmer (for carousel sync)
   highlightedFarmer?: string | null;
@@ -207,6 +209,7 @@ export default function MapComponent({
   farmers = [],
   mode = 'meal',
   dark = false,
+  lightMapStyle = 'osm',
   highlightedFarmer = null,
   precomputedRoutes = {},
   showRoutes = true
@@ -401,7 +404,7 @@ export default function MapComponent({
     `;
     return L.divIcon({
       html: svgIcon,
-      className: 'custom-marker',
+      className: 'custom-marker custom-marker-ingredient',
       iconSize: [40, 50],
       iconAnchor: [20, 50],
       popupAnchor: [0, -50]
@@ -419,7 +422,7 @@ export default function MapComponent({
     `;
     return L.divIcon({
       html: svgIcon,
-      className: 'custom-marker',
+      className: 'custom-marker custom-marker-user',
       iconSize: [40, 50],
       iconAnchor: [20, 50],
       popupAnchor: [0, -50]
@@ -437,7 +440,7 @@ export default function MapComponent({
     `;
     return L.divIcon({
       html: svgIcon,
-      className: 'custom-marker',
+      className: 'custom-marker custom-marker-user',
       iconSize: [40, 50],
       iconAnchor: [20, 50],
       popupAnchor: [0, -50]
@@ -499,7 +502,7 @@ export default function MapComponent({
 
   return (
     <MapContainer
-      key={dark ? 'dark-map' : 'light-map'}
+      key={dark ? 'dark-map' : `light-map-${lightMapStyle}`}
       center={[center.lat, center.lng]}
       zoom={zoomLevel}
       minZoom={3}
@@ -519,10 +522,26 @@ export default function MapComponent({
           />
         </>
       ) : (
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png"
-        />
+        lightMapStyle === 'carto-positron' ? (
+          <>
+            <TileLayer
+              attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+              url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png"
+              subdomains={['a', 'b', 'c', 'd']}
+              crossOrigin
+            />
+            <TileLayer
+              url="https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png"
+              subdomains={['a', 'b', 'c', 'd']}
+              crossOrigin
+            />
+          </>
+        ) : (
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png"
+          />
+        )
       )}
       
       {/* Recenter map when highlighted farmer changes in presentation mode */}
