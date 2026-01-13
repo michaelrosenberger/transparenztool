@@ -361,38 +361,24 @@ export default function PresenationMealDetailPage() {
 
   const calculateAverageDistance = () => {
     if (!meal || !userLocation) return "0";
+    if (!meal.vegetables || meal.vegetables.length === 0) return "0";
     
     const storageLocation = { 
       lat: meal.storage_lat, 
       lng: meal.storage_lng 
     };
-    
-    // Calculate distance: farm → storage + storage → user for each vegetable
-    const storageToUserDistance = calculateDistance(
-      storageLocation.lat,
-      storageLocation.lng,
-      userLocation.lat,
-      userLocation.lng
-    );
-    
-    // Use only current farmer's vegetables for distance calculation
-    const vegetablesToCalculate = highlightedFarmer 
-      ? meal.vegetables.filter(veg => veg.farmer_name === highlightedFarmer)
-      : meal.vegetables;
-    
-    if (vegetablesToCalculate.length === 0) return "0";
-    
-    const total = vegetablesToCalculate.reduce((sum, veg) => {
+
+    const total = meal.vegetables.reduce((sum, veg) => {
       const farmToStorageDistance = calculateDistance(
         veg.lat,
         veg.lng,
         storageLocation.lat,
         storageLocation.lng
       );
-      return sum + farmToStorageDistance + storageToUserDistance;
+      return sum + farmToStorageDistance;
     }, 0);
     
-    return (total / vegetablesToCalculate.length).toFixed(1);
+    return (total / meal.vegetables.length).toFixed(1);
   };
 
   if (loading) {
