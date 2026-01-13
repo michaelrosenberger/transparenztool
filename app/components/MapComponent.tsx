@@ -214,6 +214,8 @@ export default function MapComponent({
   precomputedRoutes = {},
   showRoutes = true
 }: MapComponentProps) {
+  const disableUserPinAndRoute = true;
+
   // State for storing route coordinates
   const [routes, setRoutes] = useState<{
     [key: string]: [number, number][];
@@ -276,7 +278,7 @@ export default function MapComponent({
       if (isPresentationMode && !initialRoutesLoaded) {
         // In presentation mode, pre-fetch ALL routes on initial load
         setIsLoadingRoutes(true);
-        console.log(`[MapComponent] 🚀 Starting route loading (presentation mode) - ${vegetables.length} farm routes + 1 user route`);
+        console.log(`[MapComponent] 🚀 Starting route loading (presentation mode) - ${vegetables.length} farm routes`);
         
         // Fetch all farmer routes with 1 second delays (OSRM rate limit compliance)
         vegetables.forEach((veg, index) => {
@@ -294,7 +296,7 @@ export default function MapComponent({
         });
         
         // Fetch storage-to-user route
-        if (userLocation && !requestedRoutes.has('storage-user')) {
+        if (!disableUserPinAndRoute && userLocation && !requestedRoutes.has('storage-user')) {
           requestedRoutes.add('storage-user');
           const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
           const userCoords: [number, number] = [userLocation.lat, userLocation.lng];
@@ -315,7 +317,7 @@ export default function MapComponent({
       } else if (!isPresentationMode && !initialRoutesLoaded) {
         // In normal mode, pre-fetch all routes with loading state
         setIsLoadingRoutes(true);
-        console.log(`[MapComponent] 🚀 Starting route loading (normal mode) - ${vegetables.length} farm routes + 1 user route`);
+        console.log(`[MapComponent] 🚀 Starting route loading (normal mode) - ${vegetables.length} farm routes`);
         
         // Fetch routes for all vegetables with 1 second delays (OSRM rate limit compliance)
         vegetables.forEach((veg, index) => {
@@ -333,7 +335,7 @@ export default function MapComponent({
         });
         
         // Fetch storage-to-user route after all farm routes
-        if (userLocation && !requestedRoutes.has('storage-user')) {
+        if (!disableUserPinAndRoute && userLocation && !requestedRoutes.has('storage-user')) {
           requestedRoutes.add('storage-user');
           const storageCoords: [number, number] = [storageLocation.lat, storageLocation.lng];
           const userCoords: [number, number] = [userLocation.lat, userLocation.lng];
@@ -478,7 +480,7 @@ export default function MapComponent({
     }
     
     // Add user location if exists
-    if (userLocation) {
+    if (userLocation && !disableUserPinAndRoute) {
       allPoints.push(userLocation);
     }
     
@@ -550,12 +552,12 @@ export default function MapComponent({
           highlightedFarmer={highlightedFarmer}
           vegetables={vegetables}
           storageLocation={storageLocation}
-          userLocation={userLocation || null}
+          userLocation={disableUserPinAndRoute ? null : (userLocation || null)}
         />
       )}
       
       {/* Automatically fit bounds to show all markers */}
-      <FitBounds vegetables={vegetables} userLocation={userLocation} storageLocation={storageLocation} farmers={farmers} highlightedFarmer={highlightedFarmer} />
+      <FitBounds vegetables={vegetables} userLocation={disableUserPinAndRoute ? null : userLocation} storageLocation={storageLocation} farmers={farmers} highlightedFarmer={highlightedFarmer} />
 
       {/* Storage location marker */}
       {storageLocation && (
@@ -571,7 +573,7 @@ export default function MapComponent({
       )}
 
       {/* User location marker */}
-      {userLocation && (
+      {!disableUserPinAndRoute && userLocation && (
         <>
           <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}>
             <Popup>
@@ -650,7 +652,7 @@ export default function MapComponent({
       })}
 
       {/* Draw route from storage to user location - only if successfully loaded from OSRM */}
-      {showRoutes && storageLocation && userLocation && routes['storage-user'] && successfulRoutes.has('storage-user') && (
+      {!disableUserPinAndRoute && showRoutes && storageLocation && userLocation && routes['storage-user'] && successfulRoutes.has('storage-user') && (
         <Polyline
           positions={routes['storage-user']}
           pathOptions={{ color: "orange", weight: 3, opacity: 0.7 }}

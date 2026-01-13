@@ -473,7 +473,7 @@ export default function PresenationMealDetailPage() {
           </button>
         </div>
 
-        <div className="overflow-hidden relative z-40" style={{ height: 'calc(100vh - 160px)' }}>
+        <div className="overflow-hidden relative z-40" style={{ height: 'calc(100vh - 226px)' }}>
           <div className="w-1/4 relative z-1000 top-[20%] ml-8">
           {/* Get unique farmers from vegetables */}
           {uniqueFarmers.map((veg, index) => {

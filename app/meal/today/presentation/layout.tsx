@@ -11,7 +11,7 @@ export default function PresentationLayout({
         display: none;
       }
         .page-title h1 {
-          font-size: 55px;
+          font-size: 50px;
         }
           .page-title p {
             font-size: 30px;
